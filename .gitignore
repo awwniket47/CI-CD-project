@@ -1,0 +1,77 @@
+# ── Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# ── Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+wheels/
+
+# ── Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+.python-version
+
+# ── Knowledge Base (generated data — don't commit)
+knowledge_base/
+chroma_db/
+
+# ── Node / Frontend
+node_modules/
+dist/
+.vite/
+*.local
+
+# ── Logs
+*.log
+logs/
+pip-log.txt
+
+# ── OS Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# ── IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.cursor/
+
+# ── Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+
+# ── Misc
+*.bak
+*.tmp
+*.orig
+.cache/

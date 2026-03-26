@@ -1,0 +1,26 @@
+# ── Core Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.12
+python-dotenv==1.0.1
+pydantic==2.9.2
+
+# ── LLM & Agents
+langchain==0.1.20
+langchain-core==0.1.52
+langchain-community==0.0.38
+langchain-google-genai==1.0.3
+crewai==0.28.0
+
+# ── Search + Content (DuckDuckGo only)
+duckduckgo-search==6.3.5
+
+# ── Vector Database
+chromadb==0.5.3
+sentence-transformers==3.1.1
+
+# ── Utilities
+loguru==0.7.2
+tenacity==9.0.0
+python-slugify==8.0.4
+aiofiles==24.1.0
