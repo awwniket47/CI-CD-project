@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { getHealth } from '../api/client'
 
 const nav = [
-  { to: '/',          icon: Search,   label: 'Research'       },
-  { to: '/knowledge', icon: BookOpen, label: 'Knowledge Base' },
-  { to: '/history',   icon: Clock,    label: 'History'        },
+  { to: '/app/',          icon: Search,   label: 'Research'       },
+  { to: '/app/knowledge', icon: BookOpen, label: 'Knowledge Base' },
+  { to: '/app/history',   icon: Clock,    label: 'History'        },
 ]
 
 export default function Layout({ children }) {
@@ -74,7 +74,7 @@ export default function Layout({ children }) {
           {health ? (
             <>
               <StatusRow label="Gemini API"   ok={health.gemini_configured} />
-              <StatusRow label="Search"       value={health.search_tool ? 'DuckDuckGo' : '–'} />
+              <StatusRow label="Search"       value={health.search_tool ? 'Tavily search' : '–'} />
               <StatusRow label="Vector DB"    value={health.vector_db || 'ChromaDB'} />
               <StatusRow label="Reports"      value={health.kb_reports_vector ?? 0} />
             </>

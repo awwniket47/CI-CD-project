@@ -1,7 +1,7 @@
-// src/components/AgentPipeline.jsx — Live agent pipeline (DuckDuckGo version)
+
 
 const AGENTS = [
-  { icon: '🔍', label: 'Researcher',  desc: 'Searching via DuckDuckGo' },
+  { icon: '🔍', label: 'Researcher',  desc: 'Searching via TavilySearch' },
   { icon: '🧠', label: 'Analyst',     desc: 'Extracting key insights'   },
   { icon: '✍️',  label: 'Writer',      desc: 'Writing research report'   },
   { icon: '💾', label: 'Knowledge',   desc: 'Saving to ChromaDB'        },

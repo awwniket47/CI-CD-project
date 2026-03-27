@@ -154,7 +154,7 @@ async def health():
     return {
         "status": "ok",
         "gemini_configured": bool(settings.gemini_api_key),
-        "search_tool": "DuckDuckGo (no key required)",
+        "search_tool": "TavilySearch (no key required)",
         "scraper": "Scrapy",
         "vector_db": "ChromaDB",
         "kb_reports_vector": stats["total_reports_vector"],

@@ -15,17 +15,58 @@ const EXAMPLE_QUERIES = [
 ]
 
 export default function ResearchPage() {
-  const [query, setQuery]     = useState('')
-  const [status, setStatus]   = useState('idle')
+  const [query, setQuery]         = useState('')
+  const [status, setStatus]       = useState('idle')
   const [currentStep, setCurrent] = useState(-1)
-  const [logs, setLogs]       = useState([])
-  const [report, setReport]   = useState(null)
-  const [filePath, setFilePath] = useState(null)
-  const [elapsed, setElapsed] = useState(null)
-  const [error, setError]     = useState(null)
-  const esRef = useRef(null)
+  const [logs, setLogs]           = useState([])
+  const [report, setReport]       = useState(null)
+  const [filePath, setFilePath]   = useState(null)
+  const [elapsed, setElapsed]     = useState(null)
+  const [error, setError]         = useState(null)
 
-  useEffect(() => () => esRef.current?.close(), [])
+  const esRef        = useRef(null)
+  const sessionIdRef = useRef(null)
+  const intervalRef  = useRef(null)
+  const isActiveRef  = useRef(false) // tracks if polling should continue
+
+  // cleanup on unmount
+  useEffect(() => () => {
+    esRef.current?.close()
+    clearInterval(intervalRef.current)
+  }, [])
+
+  const stopPolling = () => {
+    isActiveRef.current = false
+    clearInterval(intervalRef.current)
+    intervalRef.current = null
+  }
+
+  const startPolling = (session_id) => {
+    isActiveRef.current = true
+    intervalRef.current = setInterval(async () => {
+      if (!isActiveRef.current) {
+        stopPolling()
+        return
+      }
+      try {
+        const data = await getSession(session_id)
+
+        if (typeof data.current_step === 'number' && data.current_step >= 0) {
+          setCurrent(data.current_step)
+        }
+        if (data.log_lines?.length) {
+          setLogs(data.log_lines)
+        }
+
+        // stop polling once done
+        if (data.status === 'completed' || data.status === 'failed') {
+          stopPolling()
+        }
+      } catch (_) {
+        stopPolling()
+      }
+    }, 1500)
+  }
 
   const handleSubmit = async () => {
     if (!query.trim() || status === 'running' || status === 'pending') return
@@ -34,48 +75,67 @@ export default function ResearchPage() {
 
     try {
       const { session_id } = await startResearch(query.trim())
+      sessionIdRef.current = session_id
+      startPolling(session_id)
+
       const es = createEventSource(session_id)
       esRef.current = es
 
       es.onmessage = (e) => {
-        const msg = JSON.parse(e.data)
-        if (msg.event === 'step') {
-          setStatus(msg.status || 'running')
-          setCurrent(msg.step)
-        }
-        if (msg.event === 'log') {
-          setLogs(prev => [...prev, msg.message])
-        }
-        if (msg.event === 'completed') {
-          setElapsed(msg.elapsed)
-          setStatus('completed')
-          es.close()
-          getSession(session_id).then(data => {
-            setReport(data.report)
-            setFilePath(data.file_path)
-          })
-        }
-        if (msg.event === 'failed') {
-          setStatus('failed')
-          setError(msg.error)
-          es.close()
+        try {
+          const msg = JSON.parse(e.data)
+
+          if (msg.event === 'step') {
+            const step = typeof msg.step === 'number' ? msg.step : parseInt(msg.step)
+            setStatus(msg.status || 'running')
+            setCurrent(step)
+          }
+
+          if (msg.event === 'log') {
+            setLogs(prev => [...prev, msg.message])
+          }
+
+          if (msg.event === 'completed') {
+            setElapsed(msg.elapsed)
+            setStatus('completed')
+            setCurrent(4) // all steps done
+            stopPolling()
+            es.close()
+            getSession(session_id).then(data => {
+              setReport(data.report)
+              setFilePath(data.file_path)
+            })
+          }
+
+          if (msg.event === 'failed') {
+            setStatus('failed')
+            setError(msg.error)
+            stopPolling()
+            es.close()
+          }
+        } catch (parseErr) {
+          console.error('SSE parse error:', parseErr)
         }
       }
 
       es.onerror = () => {
         setStatus('failed')
         setError('Connection to agent stream lost.')
+        stopPolling()
         es.close()
       }
 
     } catch (err) {
       setStatus('failed')
       setError(err.response?.data?.detail || err.message)
+      stopPolling()
     }
   }
 
   const reset = () => {
     esRef.current?.close()
+    stopPolling()
+    sessionIdRef.current = null
     setStatus('idle'); setCurrent(-1); setLogs([])
     setReport(null); setFilePath(null); setElapsed(null); setError(null)
   }
@@ -95,7 +155,7 @@ export default function ResearchPage() {
           padding: '4px 12px', marginBottom: 16,
         }}>
           <span className="animate-pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }} />
-          Gemini · DuckDuckGo · CrewAI · ChromaDB
+          Gemini · Tavily · CrewAI · ChromaDB
         </div>
 
         <h1 style={{ fontSize: '2.4rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 12 }}>
@@ -105,7 +165,7 @@ export default function ResearchPage() {
           </span>
         </h1>
         <p style={{ color: 'var(--text2)', fontSize: '0.95rem', lineHeight: 1.65, maxWidth: 520 }}>
-          Ask any retail industry question. Three AI agents search DuckDuckGo,
+          Ask any retail industry question. Three AI agents search Tavily,
           extract insights, and write a report — saved to ChromaDB and your knowledge base.
         </p>
       </div>

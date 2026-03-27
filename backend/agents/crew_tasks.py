@@ -1,10 +1,30 @@
-"""agents/crew_tasks.py — Task definitions and Crew assembly (DuckDuckGo only)"""
+"""agents/crew_tasks.py — Task definitions and Crew assembly (Tavily only)"""
+from datetime import datetime
 from crewai import Task, Crew, Process
 from agents.crew_agents import build_agents
 
 
-def build_crew(query: str) -> Crew:
+def build_crew(query: str, session: dict = None) -> Crew:
     researcher, analyst, writer = build_agents()
+
+    def _log(msg: str):
+        if session:
+            session["log_lines"].append(f"[{datetime.utcnow().strftime('%H:%M:%S')}] {msg}")
+
+    def on_researcher_done(output):
+        if session:
+            session["current_step"] = 1
+            _log("Researcher done — passing to Analyst")
+
+    def on_analyst_done(output):
+        if session:
+            session["current_step"] = 2
+            _log("Analyst done — passing to Writer")
+
+    def on_writer_done(output):
+        if session:
+            session["current_step"] = 3
+            _log("Writer done — saving to ChromaDB")
 
     # ── TASK 1: Research — search multiple times, collect snippets
     research_task = Task(
@@ -27,6 +47,7 @@ def build_crew(query: str) -> Crew:
             "key statistics found, company examples, technology names, and source URLs. "
             "Detailed raw material — NOT a summary."
         ),
+        callback=on_researcher_done,
     )
 
     # ── TASK 2: Analyse — extract structured insights
@@ -48,6 +69,7 @@ def build_crew(query: str) -> Crew:
             "specific statistics, real company examples, and source list."
         ),
         context=[research_task],
+        callback=on_analyst_done,
     )
 
     # ── TASK 3: Write — produce the final report
@@ -78,6 +100,7 @@ def build_crew(query: str) -> Crew:
             "Professional tone, evidence-backed, minimum 600 words."
         ),
         context=[research_task, analysis_task],
+        callback=on_writer_done,
     )
 
     return Crew(

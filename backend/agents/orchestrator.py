@@ -15,7 +15,7 @@ repo = KnowledgeRepository()
 _sessions: dict[str, dict] = {}
 
 AGENT_STEPS = [
-    {"id": "researcher",  "name": "Research Agent",  "icon": "🔍", "desc": "Searching DuckDuckGo for retail information"},
+    {"id": "researcher",  "name": "Research Agent",  "icon": "🔍", "desc": "Searching TavilySearch for retail information"},
     {"id": "analyst",     "name": "Analyst Agent",   "icon": "🧠", "desc": "Extracting insights from search results"},
     {"id": "writer",      "name": "Writer Agent",    "icon": "✍️",  "desc": "Writing the final research report"},
     {"id": "saving",      "name": "Knowledge Base",  "icon": "💾", "desc": "Saving report to ChromaDB + .txt file"},
@@ -53,20 +53,17 @@ def _run_crew_sync(session_id: str, query: str):
         _log(f"Starting research: '{query}'")
 
         session["current_step"] = 0
-        _log("Research Agent activated — searching DuckDuckGo...")
+        _log("Research Agent activated — searching TavilySearch...")
 
-        crew   = build_crew(query)
+        # Pass session so callbacks can update current_step live
+        crew   = build_crew(query, session=session)
         result = crew.kickoff(inputs={"query": query})
 
         report_text = str(result)
         elapsed     = round(time.time() - start, 2)
 
-        session["current_step"] = 1
-        _log("Analyst Agent completed — insights structured")
-
-        session["current_step"] = 2
-        _log("Writer Agent completed — report drafted")
-
+        # Step 3 (saving) set by on_writer_done callback already,
+        # but set again here just to be safe
         session["current_step"] = 3
         _log("Saving to ChromaDB vector store + .txt file...")
 

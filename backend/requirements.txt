@@ -12,9 +12,6 @@ langchain-community==0.0.38
 langchain-google-genai==1.0.3
 crewai==0.28.0
 
-# ── Search + Content (DuckDuckGo only)
-duckduckgo-search==6.3.5
-
 # ── Vector Database
 chromadb==0.5.3
 sentence-transformers==3.1.1

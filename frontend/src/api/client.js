@@ -1,4 +1,4 @@
-// src/api/client.js — Axios API client (ChromaDB + DuckDuckGo version)
+
 import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api', timeout: 30000 })

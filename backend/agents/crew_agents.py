@@ -1,4 +1,4 @@
-"""agents/crew_agents.py — Three CrewAI agents using DuckDuckGo only"""
+"""agents/crew_agents.py — Three CrewAI agents using TavilySearch only"""
 from crewai import Agent
 from core.llm import get_llm_for_crewai
 from core.search import TavilySearchTool
@@ -9,7 +9,7 @@ def build_agents():
     search_tool = TavilySearchTool()
 
     # ── Agent 1: Researcher
-    # Uses DuckDuckGo to search and read snippets
+    # Uses Tavily to search and read snippets
     researcher = Agent(
         role="Senior Retail Industry Researcher",
         goal=(
