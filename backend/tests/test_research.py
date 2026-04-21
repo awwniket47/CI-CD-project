@@ -18,17 +18,17 @@ def client():
                 yield c
 
 
-def test_start_research_valid_query():
+def test_start_research_valid_query(client):  # ✅ added client parameter
     with patch("agents.orchestrator.run_research_async", new=AsyncMock(return_value=None)):
         response = client.post("/api/research", json={"query": "AI in retail industry trends"})
     assert response.status_code == 202
 
-def test_start_research_returns_session_id():
+def test_start_research_returns_session_id(client):  # ✅ added client parameter
     with patch("agents.orchestrator.run_research_async", new=AsyncMock(return_value=None)):
         response = client.post("/api/research", json={"query": "AI in retail industry trends"})
     assert "session_id" in response.json()
 
-    
+
 def test_start_research_query_too_short(client):
     response = client.post("/api/research", json={"query": "AI"})
     assert response.status_code == 422
