@@ -163,4 +163,3 @@ class KnowledgeRepository:
             except Exception:
                 out.append({"filename": fp.name, "query": fp.stem, "date": "", "word_count": 0})
         return out
-        
