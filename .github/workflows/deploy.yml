@@ -148,7 +148,7 @@ jobs:
 
             # ── 4. Write backend .env with real API keys ─────────────────
             mkdir -p backend
-            cat > backend/.env << 'ENVEOF'
+            cat > backend/.env << ENVEOF
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
             KB_DIR=./knowledge_base
