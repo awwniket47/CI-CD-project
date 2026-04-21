@@ -1,5 +1,4 @@
 # docker-compose.yml — replace the existing one
-version: '3.8'
 
 services:
   backend:
