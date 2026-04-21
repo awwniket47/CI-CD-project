@@ -6,11 +6,10 @@ from pydantic import BaseModel, Field
 from agents.orchestrator import (
     create_session, get_session, run_research_async,
     stream_progress, AGENT_STEPS, _sessions,
+    repo,  # reuse the single shared instance — avoids duplicate ChromaDB PersistentClient
 )
-from knowledge_base.repository import KnowledgeRepository
 
 router = APIRouter()
-repo = KnowledgeRepository()
 
 
 # ── Schemas
@@ -104,11 +103,6 @@ async def semantic_search(
     q: str = Query(min_length=2),
     n: int = Query(5, le=20),
 ):
-    """
-    Semantic similarity search using ChromaDB.
-    Finds reports that are conceptually related to the query —
-    even if they don't contain the exact keywords.
-    """
     results = repo.semantic_search(q, n_results=n)
     return {"query": q, "type": "semantic", "count": len(results), "results": results}
 
@@ -116,7 +110,6 @@ async def semantic_search(
 # ── Keyword search (.txt files)
 @router.get("/knowledge/search/keyword")
 async def keyword_search(q: str = Query(min_length=2)):
-    """Keyword search across saved .txt report files."""
     results = repo.keyword_search(q)
     return {"query": q, "type": "keyword", "count": len(results), "results": results}
 

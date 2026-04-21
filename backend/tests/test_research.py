@@ -1,8 +1,7 @@
 """tests/test_research.py — Research API endpoint tests"""
-from unittest.mock import patch, AsyncMock
 import pytest
+from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture
@@ -14,17 +13,24 @@ def client():
                 "total_reports_txt": 0,
             }
             from main import app
-            with TestClient(app) as c:
+            # raise_server_exceptions=False prevents background task errors
+            # (RuntimeError: cannot schedule new futures after shutdown)
+            # from crashing the TestClient after the 202 response is returned.
+            with TestClient(app, raise_server_exceptions=False) as c:
                 yield c
 
 
-def test_start_research_valid_query(client):  # ✅ added client parameter
-    with patch("agents.orchestrator.run_research_async", new=AsyncMock(return_value=None)):
+def test_start_research_valid_query(client):
+    # Patch where the name is USED (in the router), not where it is defined.
+    # The router does `from agents.orchestrator import run_research_async`
+    # which binds its own reference — patching the source has no effect.
+    with patch("api.routes.run_research_async", new=AsyncMock(return_value=None)):
         response = client.post("/api/research", json={"query": "AI in retail industry trends"})
     assert response.status_code == 202
 
-def test_start_research_returns_session_id(client):  # ✅ added client parameter
-    with patch("agents.orchestrator.run_research_async", new=AsyncMock(return_value=None)):
+
+def test_start_research_returns_session_id(client):
+    with patch("api.routes.run_research_async", new=AsyncMock(return_value=None)):
         response = client.post("/api/research", json={"query": "AI in retail industry trends"})
     assert "session_id" in response.json()
 

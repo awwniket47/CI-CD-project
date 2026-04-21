@@ -12,17 +12,16 @@ from loguru import logger
 from agents.crew_tasks import build_crew
 from knowledge_base.repository import KnowledgeRepository
 
+# Single shared repository instance — exported so api/routes.py can reuse it
+# instead of creating a second ChromaDB PersistentClient (which can lock-conflict).
 repo = KnowledgeRepository()
 
 # ── Session store with automatic eviction ────────────────────────────────────
-# OrderedDict preserves insertion order so we can evict the oldest entries.
-# Keeps memory bounded to MAX_SESSIONS * ~10 KB ≈ 1 MB max.
 MAX_SESSIONS = 100
 _sessions: OrderedDict[str, dict] = OrderedDict()
 
 
 def _evict_old_sessions() -> None:
-    """Drop the oldest sessions when the store exceeds MAX_SESSIONS."""
     while len(_sessions) >= MAX_SESSIONS:
         _sessions.popitem(last=False)
 
@@ -109,7 +108,9 @@ _executor = ThreadPoolExecutor(max_workers=3)
 
 
 async def run_research_async(session_id: str, query: str):
-    loop = asyncio.get_event_loop()
+    # Use get_running_loop() — get_event_loop() is deprecated in Python 3.10+
+    # and can return the wrong loop when called from an async context.
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(_executor, _run_crew_sync, session_id, query)
 
 

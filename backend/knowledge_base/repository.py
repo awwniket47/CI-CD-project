@@ -96,9 +96,13 @@ class KnowledgeRepository:
     def semantic_search(self, query, n_results=5):
         try:
             col = self._get_collection()
+            count = col.count()
+            # Guard: ChromaDB raises if the collection is empty
+            if count == 0:
+                return []
             results = col.query(
                 query_texts=[query],
-                n_results=min(n_results, max(col.count(), 1)),
+                n_results=min(n_results, count),
                 include=["metadatas", "distances"],
             )
             out = []

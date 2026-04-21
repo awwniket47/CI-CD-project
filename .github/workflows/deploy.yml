@@ -27,7 +27,12 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install pytest httpx
+          pip install pytest httpx ruff
+
+      - name: Lint with Ruff
+        run: |
+          cd backend
+          ruff check . --select E,F,W --ignore E501 --exclude tests/
 
       - name: Run backend tests
         env:
@@ -95,10 +100,34 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key:      ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/retailmind
-            git pull origin main
-            docker compose pull
-            docker compose up -d --remove-orphans
+            set -e
+
+            # ── Bootstrap: install Docker + Compose V2 if not present ──
+            if ! command -v docker &> /dev/null; then
+              curl -fsSL https://get.docker.com | sh
+              sudo usermod -aG docker $USER
+            fi
+            if ! docker compose version &> /dev/null; then
+              COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+              sudo curl -SL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-x86_64" \
+                -o /usr/local/lib/docker/cli-plugins/docker-compose
+              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+            fi
+
+            # ── Bootstrap: clone repo on first deploy if directory absent ──
+            if [ ! -d "$HOME/retailmind" ]; then
+              git clone https://github.com/${{ github.repository }}.git "$HOME/retailmind"
+            fi
+
+            cd "$HOME/retailmind"
+            git fetch origin main
+            git reset --hard origin/main
+
+            # ── Pull new images and restart ──
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
-            sleep 10
-            curl -f http://localhost:8000/api/health && echo "Deploy successful" || echo "Deploy failed"
+
+            # ── Health check ──
+            sleep 15
+            curl -f http://localhost:8000/api/health && echo "Deploy successful" || (echo "Deploy failed — check logs" && exit 1)
