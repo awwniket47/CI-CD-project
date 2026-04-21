@@ -7,6 +7,9 @@ from agents.crew_agents import build_agents
 def build_crew(query: str, session: dict = None) -> Crew:
     researcher, analyst, writer = build_agents()
 
+    # Use current year dynamically so agents always search for fresh data
+    current_year = datetime.utcnow().year
+
     def _log(msg: str):
         if session:
             session["log_lines"].append(f"[{datetime.utcnow().strftime('%H:%M:%S')}] {msg}")
@@ -26,7 +29,7 @@ def build_crew(query: str, session: dict = None) -> Crew:
             session["current_step"] = 3
             _log("Writer done — saving to ChromaDB")
 
-    # ── TASK 1: Research — search multiple times, collect snippets
+    # ── TASK 1: Research ─────────────────────────────────────────────
     research_task = Task(
         description=(
             f"Research the following retail industry topic thoroughly:\n\n"
@@ -34,11 +37,11 @@ def build_crew(query: str, session: dict = None) -> Crew:
             f"Your steps:\n"
             f"1. Search at least 3 different queries related to the topic\n"
             f"   Example variations: '{query}', 'latest {query} trends', "
-            f"   '{query} statistics 2024', '{query} real world examples'\n"
+            f"   '{query} statistics {current_year}', '{query} real world examples'\n"
             f"2. Read ALL content snippets carefully from each search\n"
             f"3. Collect all facts, statistics, company names, and insights\n"
             f"4. Do NOT summarise yet — just gather everything you find\n\n"
-            f"Focus on: authoritative sources, recent data (2023-2025), "
+            f"Focus on: authoritative sources, recent data ({current_year - 1}-{current_year}), "
             f"specific statistics, real company examples like Amazon, Walmart, Zara."
         ),
         agent=researcher,
@@ -50,7 +53,7 @@ def build_crew(query: str, session: dict = None) -> Crew:
         callback=on_researcher_done,
     )
 
-    # ── TASK 2: Analyse — extract structured insights
+    # ── TASK 2: Analyse ──────────────────────────────────────────────
     analysis_task = Task(
         description=(
             f"Analyse all the raw research content about: '{query}'\n\n"
@@ -72,7 +75,7 @@ def build_crew(query: str, session: dict = None) -> Crew:
         callback=on_analyst_done,
     )
 
-    # ── TASK 3: Write — produce the final report
+    # ── TASK 3: Write ────────────────────────────────────────────────
     write_task = Task(
         description=(
             f"Write a professional retail industry research report on: '{query}'\n\n"

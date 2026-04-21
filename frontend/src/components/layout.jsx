@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { getHealth } from '../api/client'
 
 const nav = [
-  { to: '/app/',          icon: Search,   label: 'Research'       },
+  { to: '/app',           icon: Search,   label: 'Research'       },
   { to: '/app/knowledge', icon: BookOpen, label: 'Knowledge Base' },
   { to: '/app/history',   icon: Clock,    label: 'History'        },
 ]
@@ -52,7 +52,7 @@ export default function Layout({ children }) {
             Navigation
           </div>
           {nav.map(({ to, icon: Icon, label }) => (
-            <NavLink key={to} to={to} style={({ isActive }) => ({
+            <NavLink key={to} to={to} end style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '9px 12px', borderRadius: 8, marginBottom: 3,
               fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none',
@@ -74,7 +74,7 @@ export default function Layout({ children }) {
           {health ? (
             <>
               <StatusRow label="Gemini API"   ok={health.gemini_configured} />
-              <StatusRow label="Search"       value={health.search_tool ? 'Tavily search' : '–'} />
+              <StatusRow label="Search"       value={health.search_tool ? 'Tavily' : '–'} />
               <StatusRow label="Vector DB"    value={health.vector_db || 'ChromaDB'} />
               <StatusRow label="Reports"      value={health.kb_reports_vector ?? 0} />
             </>

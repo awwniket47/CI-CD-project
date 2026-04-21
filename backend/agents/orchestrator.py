@@ -2,6 +2,7 @@
 import asyncio
 import json
 import time
+from collections import OrderedDict
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from typing import AsyncGenerator
@@ -12,7 +13,19 @@ from agents.crew_tasks import build_crew
 from knowledge_base.repository import KnowledgeRepository
 
 repo = KnowledgeRepository()
-_sessions: dict[str, dict] = {}
+
+# ── Session store with automatic eviction ────────────────────────────────────
+# OrderedDict preserves insertion order so we can evict the oldest entries.
+# Keeps memory bounded to MAX_SESSIONS * ~10 KB ≈ 1 MB max.
+MAX_SESSIONS = 100
+_sessions: OrderedDict[str, dict] = OrderedDict()
+
+
+def _evict_old_sessions() -> None:
+    """Drop the oldest sessions when the store exceeds MAX_SESSIONS."""
+    while len(_sessions) >= MAX_SESSIONS:
+        _sessions.popitem(last=False)
+
 
 AGENT_STEPS = [
     {"id": "researcher",  "name": "Research Agent",  "icon": "🔍", "desc": "Searching TavilySearch for retail information"},
@@ -24,6 +37,7 @@ AGENT_STEPS = [
 
 def create_session(query: str) -> str:
     import uuid
+    _evict_old_sessions()
     session_id = str(uuid.uuid4())
     _sessions[session_id] = {
         "id": session_id, "query": query,
@@ -55,15 +69,12 @@ def _run_crew_sync(session_id: str, query: str):
         session["current_step"] = 0
         _log("Research Agent activated — searching TavilySearch...")
 
-        # Pass session so callbacks can update current_step live
         crew   = build_crew(query, session=session)
         result = crew.kickoff(inputs={"query": query})
 
         report_text = str(result)
         elapsed     = round(time.time() - start, 2)
 
-        # Step 3 (saving) set by on_writer_done callback already,
-        # but set again here just to be safe
         session["current_step"] = 3
         _log("Saving to ChromaDB vector store + .txt file...")
 
@@ -93,6 +104,7 @@ def _run_crew_sync(session_id: str, query: str):
         logger.exception(f"Pipeline failed for {session_id}")
 
 
+# Exported so main.py lifespan can call _executor.shutdown() on app stop
 _executor = ThreadPoolExecutor(max_workers=3)
 
 

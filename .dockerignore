@@ -7,22 +7,24 @@ venv/
 .venv/
 .python-version
 
-# Secrets — never in image
+# Secrets
 .env
 .env.*
 
-# Generated data — mounted as volumes anyway
+# Generated data — mounted as volumes at runtime
 knowledge_base/
 chroma_db/
 data/
 
-# Dev tools
+# Dev / CI
 .git/
 .github/
 node_modules/
 *.log
+tests/
+*.md
 
-# Frontend build artifacts (for backend image)
+# Frontend build artifacts (irrelevant to backend image)
 dist/
 .vite/
 

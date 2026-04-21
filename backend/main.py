@@ -9,13 +9,23 @@ from core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # ── Startup ──────────────────────────────────────────────────────
+    # Validate required API keys early — fail loudly before any request
+    settings.validate()
+
     os.makedirs(settings.kb_dir, exist_ok=True)
+
     yield
+
+    # ── Shutdown ─────────────────────────────────────────────────────
+    # Cleanly drain the thread pool used by the research pipeline
+    from agents.orchestrator import _executor
+    _executor.shutdown(wait=False)
 
 
 app = FastAPI(
     title="Retail Researcher Agent",
-    description="Autonomous AI research agent using Gemini + Serper + Scrapy/Scrapling",
+    description="Autonomous AI research agent using Gemini + Tavily + ChromaDB",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
@@ -23,7 +33,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"],
+    allow_origins=settings.allowed_origins,   # reads from ALLOWED_ORIGINS env var
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

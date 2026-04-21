@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import ResearchPage from './pages/ResearchPage.jsx'
 import KnowledgePage from './pages/KnowledgePage.jsx'
@@ -16,6 +17,8 @@ export default function App() {
 }
 
 function RedirectToLanding() {
-  window.location.replace('/landing.html')
+  useEffect(() => {
+    window.location.replace('/landing.html')
+  }, [])
   return null
 }

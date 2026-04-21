@@ -2,6 +2,7 @@
 core/search.py — Tavily search tool (reliable, built for AI agents)
 Free tier: 1000 searches/month. No rate limiting issues.
 """
+import asyncio
 import os
 from typing import Type
 from langchain.tools import BaseTool
@@ -34,13 +35,15 @@ class TavilySearchTool(BaseTool):
         return self._search(query)
 
     async def _arun(self, query: str) -> str:
-        return self._search(query)
+        # Run the blocking HTTP call in a thread so the event loop stays free
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._search, query)
 
     def _search(self, query: str) -> str:
         api_key = os.getenv("TAVILY_API_KEY", "")
 
         if not api_key:
-            return "TAVILY_API_KEY not set in .env. Get free key at https://tavily.com"
+            return "TAVILY_API_KEY not set in .env. Get a free key at https://tavily.com"
 
         try:
             from tavily import TavilyClient
@@ -50,18 +53,15 @@ class TavilySearchTool(BaseTool):
                 query=query,
                 search_depth="basic",
                 max_results=5,
-                include_answer=True,    # Tavily gives a direct answer too
+                include_answer=True,
             )
 
             output = []
 
-            # Direct answer if available
             if results.get("answer"):
                 output.append(f"[DIRECT ANSWER]\n{results['answer']}\n")
 
-            # Individual results
             for i, r in enumerate(results.get("results", []), 1):
-                # Truncate content to 300 chars to save tokens
                 content = (r.get("content") or "")[:300]
                 output.append(
                     f"[RESULT {i}]\n"

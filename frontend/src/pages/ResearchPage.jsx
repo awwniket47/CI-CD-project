@@ -14,6 +14,9 @@ const EXAMPLE_QUERIES = [
   { icon: <Sparkles size={14} />,     text: 'Retail automation technologies and their ROI'        },
 ]
 
+// Number of consecutive SSE errors before we give up
+const MAX_SSE_ERRORS = 3
+
 export default function ResearchPage() {
   const [query, setQuery]         = useState('')
   const [status, setStatus]       = useState('idle')
@@ -24,12 +27,12 @@ export default function ResearchPage() {
   const [elapsed, setElapsed]     = useState(null)
   const [error, setError]         = useState(null)
 
-  const esRef        = useRef(null)
-  const sessionIdRef = useRef(null)
-  const intervalRef  = useRef(null)
-  const isActiveRef  = useRef(false) // tracks if polling should continue
+  const esRef         = useRef(null)
+  const sessionIdRef  = useRef(null)
+  const intervalRef   = useRef(null)
+  const isActiveRef   = useRef(false)
+  const sseErrorCount = useRef(0)       // retry counter for SSE errors
 
-  // cleanup on unmount
   useEffect(() => () => {
     esRef.current?.close()
     clearInterval(intervalRef.current)
@@ -44,24 +47,14 @@ export default function ResearchPage() {
   const startPolling = (session_id) => {
     isActiveRef.current = true
     intervalRef.current = setInterval(async () => {
-      if (!isActiveRef.current) {
-        stopPolling()
-        return
-      }
+      if (!isActiveRef.current) { stopPolling(); return }
       try {
         const data = await getSession(session_id)
-
         if (typeof data.current_step === 'number' && data.current_step >= 0) {
           setCurrent(data.current_step)
         }
-        if (data.log_lines?.length) {
-          setLogs(data.log_lines)
-        }
-
-        // stop polling once done
-        if (data.status === 'completed' || data.status === 'failed') {
-          stopPolling()
-        }
+        if (data.log_lines?.length) setLogs(data.log_lines)
+        if (data.status === 'completed' || data.status === 'failed') stopPolling()
       } catch (_) {
         stopPolling()
       }
@@ -75,13 +68,16 @@ export default function ResearchPage() {
 
     try {
       const { session_id } = await startResearch(query.trim())
-      sessionIdRef.current = session_id
+      sessionIdRef.current  = session_id
+      sseErrorCount.current = 0
       startPolling(session_id)
 
       const es = createEventSource(session_id)
       esRef.current = es
 
       es.onmessage = (e) => {
+        // Reset error counter on any successful message
+        sseErrorCount.current = 0
         try {
           const msg = JSON.parse(e.data)
 
@@ -90,15 +86,13 @@ export default function ResearchPage() {
             setStatus(msg.status || 'running')
             setCurrent(step)
           }
-
           if (msg.event === 'log') {
             setLogs(prev => [...prev, msg.message])
           }
-
           if (msg.event === 'completed') {
             setElapsed(msg.elapsed)
             setStatus('completed')
-            setCurrent(4) // all steps done
+            setCurrent(4)
             stopPolling()
             es.close()
             getSession(session_id).then(data => {
@@ -106,7 +100,6 @@ export default function ResearchPage() {
               setFilePath(data.file_path)
             })
           }
-
           if (msg.event === 'failed') {
             setStatus('failed')
             setError(msg.error)
@@ -119,15 +112,20 @@ export default function ResearchPage() {
       }
 
       es.onerror = () => {
-        setStatus('failed')
-        setError('Connection to agent stream lost.')
-        stopPolling()
-        es.close()
+        sseErrorCount.current += 1
+        if (sseErrorCount.current >= MAX_SSE_ERRORS) {
+          // Give up only after MAX_SSE_ERRORS consecutive failures
+          setStatus('failed')
+          setError('Connection to agent stream lost after multiple retries.')
+          stopPolling()
+          es.close()
+        }
+        // Otherwise let the browser auto-reconnect (EventSource retries by default)
       }
 
     } catch (err) {
       setStatus('failed')
-      setError(err.response?.data?.detail || err.message)
+      setError(err.message)
       stopPolling()
     }
   }
@@ -135,7 +133,8 @@ export default function ResearchPage() {
   const reset = () => {
     esRef.current?.close()
     stopPolling()
-    sessionIdRef.current = null
+    sessionIdRef.current  = null
+    sseErrorCount.current = 0
     setStatus('idle'); setCurrent(-1); setLogs([])
     setReport(null); setFilePath(null); setElapsed(null); setError(null)
   }

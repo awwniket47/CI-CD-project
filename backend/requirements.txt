@@ -1,7 +1,6 @@
 # ── Core Framework
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
-python-multipart==0.0.12
 python-dotenv==1.0.0
 pydantic==2.9.2
 
@@ -12,12 +11,16 @@ langchain-community==0.0.38
 langchain-google-genai==1.0.3
 crewai==0.28.0
 
+# ── Search
+tavily-python==0.3.3
+
 # ── Vector Database
+# sentence-transformers removed — saves ~1GB (PyTorch).
+# ChromaDB falls back to its built-in onnxruntime embeddings (all-MiniLM-L6-v2)
+# which are downloaded once and cached. Semantic search still works identically.
 chromadb==0.5.3
-sentence-transformers==3.1.1
 
 # ── Utilities
 loguru==0.7.2
 tenacity
 python-slugify==8.0.4
-aiofiles==24.1.0

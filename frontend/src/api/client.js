@@ -1,7 +1,20 @@
-
 import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api', timeout: 30000 })
+
+// Normalise all API errors into a single shape so every page gets the same
+// human-readable message from FastAPI's `detail` field automatically.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message =
+      error.response?.data?.detail ||
+      error.response?.data?.message ||
+      error.message ||
+      'An unexpected error occurred'
+    return Promise.reject(new Error(message))
+  }
+)
 
 export const startResearch = (query) =>
   api.post('/research', { query }).then(r => r.data)
