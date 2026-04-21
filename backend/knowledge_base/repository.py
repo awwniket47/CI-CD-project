@@ -1,5 +1,4 @@
 """knowledge_base/repository.py"""
-import os
 from datetime import datetime
 from pathlib import Path
 from loguru import logger
@@ -154,7 +153,7 @@ class KnowledgeRepository:
                 lines = fp.read_text(encoding="utf-8", errors="ignore").splitlines()
                 query = lines[0].replace("Query     :", "").strip() if lines else fp.stem
                 date = lines[1].replace("Date      :", "").strip()[:10] if len(lines) > 1 else ""
-                wc_ln = next((l for l in lines if l.startswith("Word count")), "")
+                wc_ln = next((line for line in lines if line.startswith("Word count")), "")
                 wc = int(wc_ln.split(":")[-1].strip()) if wc_ln else 0
                 out.append({"filename": fp.name, "query": query, "date": date, "word_count": wc})
             except Exception:
