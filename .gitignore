@@ -32,8 +32,10 @@ env/
 ENV/
 .python-version
 
-# ── Knowledge Base (generated data — don't commit)
-knowledge_base/
+# ── Knowledge Base generated DATA — do NOT ignore the Python package files
+# Only ignore the runtime-generated .txt reports and chroma vector DB
+knowledge_base/*.txt
+knowledge_base/*.json
 chroma_db/
 
 # ── Node / Frontend

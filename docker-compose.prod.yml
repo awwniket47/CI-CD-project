@@ -1,0 +1,31 @@
+# docker-compose.prod.yml
+# Overrides for EC2 production deployment.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Set these in /etc/environment or export before running:
+#   DOMAIN=yourdomain.com   (or your EC2 public IP)
+#   DOCKERHUB_USERNAME=yourname
+
+services:
+  backend:
+    image: ${DOCKERHUB_USERNAME}/retailmind-backend:latest
+    # No build: pull from DockerHub
+    build: !reset null
+    environment:
+      - ALLOWED_ORIGINS=http://${DOMAIN},https://${DOMAIN}
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/retailmind-frontend:latest
+    build: !reset null
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

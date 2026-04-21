@@ -5,16 +5,53 @@ on:
     branches: [main]
 
 env:
-  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/retailmind-backend
+  BACKEND_IMAGE:  ${{ secrets.DOCKERHUB_USERNAME }}/retailmind-backend
   FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/retailmind-frontend
 
 jobs:
-  build-and-deploy:
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Run backend tests
+        env:
+          GEMINI_API_KEY: fake-key-for-testing
+          TAVILY_API_KEY: fake-key-for-testing
+          KB_DIR: /tmp/kb_data
+          CHROMA_DIR: /tmp/chroma_db
+        run: |
+          cd backend
+          python -m pytest tests/ -v --tb=short
+
+      - name: Frontend build check
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+  build:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -22,37 +59,46 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build & push backend
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
-          tags: ${{ env.BACKEND_IMAGE }}:latest,${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
 
       - name: Build & push frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ${{ env.FRONTEND_IMAGE }}:latest,${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Deploy backend to ECS
-        run: |
-          aws ecs update-service \
-            --cluster retailmind-cluster \
-            --service retailmind-backend \
-            --force-new-deployment
-
-      - name: Deploy frontend to ECS
-        run: |
-          aws ecs update-service \
-            --cluster retailmind-cluster \
-            --service retailmind-frontend \
-            --force-new-deployment
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/retailmind
+            git pull origin main
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+            sleep 10
+            curl -f http://localhost:8000/api/health && echo "Deploy successful" || echo "Deploy failed"
