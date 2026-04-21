@@ -14,7 +14,7 @@ class Settings:
     tavily_api_key: str      = os.getenv("TAVILY_API_KEY", "")
 
     # Knowledge base (.txt files)
-    kb_dir: str              = os.getenv("KB_DIR", "./knowledge_base")
+    kb_dir: str              = os.getenv("KB_DIR", "./kb_data")
 
     # ChromaDB vector store
     chroma_dir: str          = os.getenv("CHROMA_DIR", "./chroma_db")

@@ -31,6 +31,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy app source — set ownership here, no second chown pass needed
 COPY --chown=appuser:appgroup . .
 
+# Cache-buster to force rebuild of COPY layer
+RUN echo "cache-bust-$(date +%s)"
+
 USER appuser
 
 EXPOSE 8000
