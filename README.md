@@ -1,30 +1,16 @@
-# RetailMind — Autonomous Retail Research Agent CI/CD Pipeline
+# RetailMind — Autonomous Retail Research Agent
 
-A complete DevOps implementation for containerizing and deploying a
-full-stack AI-powered Retail Research Application onto AWS EC2 using
-Docker, GitHub Actions CI/CD, and a Python FastAPI backend with a
-React frontend — with automated testing on every commit and
-zero-downtime deployments on every merge to `main`.
+A complete DevOps implementation for containerizing and deploying a full-stack AI-powered Retail Research Application onto AWS EC2 using Docker, GitHub Actions CI/CD, and a Python FastAPI backend with a React frontend — with automated testing on every commit, zero-downtime deployments on every merge to `main`, and a versioned rollback system for production safety.
 
 ---
 
 ## Project Overview
 
-This project takes a full-stack **RetailMind** application — built with
-FastAPI (Python) on the backend and React + Vite on the frontend — and
-deploys it to a production-grade AWS EC2 instance. The deployment is
-fully automated: a single `git push` triggers the entire test, build,
-push, and deploy pipeline with no manual steps required.
+This project takes a full-stack **RetailMind** application — built with FastAPI (Python) on the backend and React + Vite on the frontend — and deploys it to a production-grade AWS EC2 instance. The deployment is fully automated: a single `git push` triggers the entire test, build, push, and deploy pipeline with no manual steps required.
 
-The application uses three autonomous AI agents (Researcher, Analyst,
-Writer) powered by Google Gemini 2.0 to generate professional retail
-industry research reports. Reports are saved to a ChromaDB vector store
-and are semantically searchable.
+The application uses three autonomous AI agents (Researcher, Analyst, Writer) powered by Google Gemini 2.0 to generate professional retail industry research reports. Reports are saved to a ChromaDB vector store and are semantically searchable.
 
-The key feature is automated rollout via Docker Compose. When a new
-version is merged, GitHub Actions builds fresh images, pushes them to
-Docker Hub, and SSH-deploys them to EC2 — ensuring the app is always
-running the latest version within minutes of a merge.
+The key feature is automated rollout via Docker Compose. When a new version is merged, GitHub Actions builds fresh images, pushes them to Docker Hub, and SSH-deploys them to EC2 — ensuring the app is always running the latest version within minutes of a merge. Every deployment is version-tracked by its git SHA, enabling one-click rollback to any previous deployment directly from GitHub Actions.
 
 ---
 
@@ -32,6 +18,8 @@ running the latest version within minutes of a merge.
 
 - Automated CI pipeline triggered on **every commit and pull request**
 - Automated CD pipeline triggered on **every merge to `main`**
+- **Versioned deployments** — every deploy is tagged with its git SHA and recorded in `deployments.log`
+- **One-click rollback** — manually trigger rollback to previous or any specific deployment from GitHub Actions
 - Unit and integration tests with pytest for the FastAPI backend
 - Frontend build verification on every push
 - Docker containerization with multi-stage builds — no local builds needed
@@ -62,7 +50,7 @@ running the latest version within minutes of a merge.
 ## Project Structure
 
 ```
-CI-CD-project/
+Retailmind-Autonomous_Retail_Research_Agent/
 │
 ├── backend/
 │   ├── Dockerfile                    # Multi-stage Python production image
@@ -109,7 +97,8 @@ CI-CD-project/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                    # Runs on every push / PR
-│       └── deploy.yml                # Runs on merge to main
+│       ├── deploy.yml                # Runs on merge to main
+│       └── rollback.yml              # Manually triggered rollback
 │
 ├── docker-compose.yml                # Local development stack
 ├── docker-compose.prod.yml           # EC2 production overrides
@@ -119,148 +108,13 @@ CI-CD-project/
 
 ---
 
-## Deployment Steps
+## CI/CD Pipeline
 
-Follow these steps to deploy this project from scratch.
+This project uses three separate GitHub Actions workflows following the industry standard separation of concerns.
 
-**Prerequisites**
-- AWS account with an EC2 instance (Ubuntu 22.04, t2.micro or t3.small)
-- Docker Hub account
-- GitHub account with repository access
-- Gemini API key (free at aistudio.google.com)
-- Tavily API key (free at tavily.com)
-
----
-
-**Step 1 — Clone this repository**
-
-```bash
-git clone https://github.com/awwniket47/CI-CD-project.git
-cd CI-CD-project
-```
-
----
-
-**Step 2 — Launch AWS EC2 Instance**
-
-Go to AWS Console → EC2 → Launch Instance. Use the following settings:
+### CI Workflow — runs on every push and pull request
 
 ```
-Name:           retailmind-server
-AMI:            Ubuntu Server 22.04 LTS
-Instance type:  t3.small (recommended) or t2.micro (free tier)
-Key pair:       Create new → download the .pem file
-Security group: Allow ports 22 (SSH), 80 (HTTP), 8000 (API)
-```
-
----
-
-**Step 3 — Set up Docker on EC2**
-
-SSH into your instance and install Docker:
-
-```bash
-ssh -i your-key.pem ubuntu@<your-ec2-public-ip>
-
-# Install Docker
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker ubuntu
-newgrp docker
-
-# Install Docker Compose plugin
-sudo apt-get install -y docker-compose-plugin
-
-# Verify
-docker --version
-docker compose version
-```
-
----
-
-**Step 4 — Prepare the server**
-
-```bash
-# Clone the repo on the server
-git clone https://github.com/awwniket47/CI-CD-project.git ~/retailmind
-cd ~/retailmind
-
-# Create the backend .env file
-cat > backend/.env << 'EOF'
-GEMINI_API_KEY=your_gemini_api_key_here
-TAVILY_API_KEY=your_tavily_api_key_here
-KB_DIR=./knowledge_base
-CHROMA_DIR=./chroma_db
-EOF
-```
-
----
-
-**Step 5 — Add GitHub Secrets**
-
-Go to your GitHub repo → Settings → Secrets and variables → Actions
-and add these secrets:
-
-```
-DOCKERHUB_USERNAME      → your Docker Hub username
-DOCKERHUB_TOKEN         → your Docker Hub access token
-EC2_HOST                → your EC2 public IP address
-EC2_USERNAME            → ubuntu
-EC2_SSH_KEY             → full contents of your .pem file
-```
-
-To get the SSH key contents for the secret:
-
-```bash
-cat your-key.pem
-# Copy everything including -----BEGIN ... and -----END ...
-```
-
----
-
-**Step 6 — Push to trigger the pipeline**
-
-```bash
-git add .
-git commit -m "feat: initial deployment"
-git push origin main
-```
-
-Go to the **Actions** tab on GitHub and watch all stages complete.
-The pipeline tests the backend, builds both Docker images, pushes
-them to Docker Hub, and deploys to EC2 automatically.
-
----
-
-**Step 7 — Verify the deployment**
-
-```bash
-# SSH into EC2 and check running containers
-ssh -i your-key.pem ubuntu@<your-ec2-public-ip>
-docker ps
-```
-
-You should see both `retailmind-backend` and `retailmind-frontend`
-containers running.
-
----
-
-**Step 8 — Get the app URL**
-
-Open your browser and navigate to:
-
-```
-http://<your-ec2-public-ip>              → Frontend (RetailMind app)
-http://<your-ec2-public-ip>:8000/docs    → FastAPI Swagger docs
-http://<your-ec2-public-ip>:8000/api/health → Health check JSON
-```
-
----
-
-## CI/CD Pipeline Stages
-
-```
-CI Pipeline — runs on every push and pull request
-│
 ├── Stage 1 — Checkout
 │     └─ Pull latest code from branch
 │
@@ -278,58 +132,170 @@ CI Pipeline — runs on every push and pull request
 └── Stage 4 — Docker Build Check
       └─ docker build backend image
       └─ docker build frontend image
+```
 
+### CD Workflow — runs only on merge to main
 
-CD Pipeline — runs only on merge to main
-│
-├── Stage 1 — Checkout + Run Tests
-│     └─ Re-run backend tests as quality gate
-│     └─ Re-run frontend build check
+```
+├── Stage 1 — Run Tests (quality gate)
 │
 ├── Stage 2 — Build and Push Images
 │     └─ Login to Docker Hub
-│     └─ Setup Docker Buildx with GHA cache
 │     └─ Build + push backend: latest + SHA tag
 │     └─ Build + push frontend: latest + SHA tag
 │
 └── Stage 3 — Deploy to EC2
-      └─ SSH into EC2 via appleboy/ssh-action
-      └─ cd ~/retailmind && git pull origin main
-      └─ docker compose pull (fresh images)
+      └─ SSH into EC2
+      └─ git pull + docker compose pull
       └─ docker compose up -d --remove-orphans
-      └─ docker image prune -f (cleanup old images)
-      └─ curl health check → confirm deploy success
+      └─ Health check → confirm deploy success
+      └─ Record SHA + timestamp to deployments.log
+```
+
+### Rollback Workflow — manually triggered from GitHub Actions
+
+```
+├── Input: Git SHA (optional — leave empty for previous deployment)
+│
+├── Read deployments.log on EC2
+│     └─ Use provided SHA or pick second entry (previous deploy)
+│
+├── Pull pinned images from Docker Hub
+│     └─ backend:<SHA> + frontend:<SHA>
+│
+├── Deploy pinned version via docker compose
+│     └─ ROLLBACK_SHA env var overrides :latest tag
+│
+└── Health check + record rollback entry in deployments.log
 ```
 
 ---
 
-## Zero-Downtime Deployment
+## Versioning and Rollback System
 
-Docker Compose pulls the new image while the old container is still
-running. The `up -d` command replaces containers one service at a time,
-and the backend health check at `/api/health` confirms the new container
-is live before the old one is removed. The frontend nginx container
-serves cached static files during the transition.
+Every deployment is immutably tagged with its git SHA on Docker Hub:
+
+```
+yourname/retailmind-backend:latest
+yourname/retailmind-backend:659c66771a5a2decc760e2c4785a5e7d6a29c078
+```
+
+A rolling log of the last 10 deployments is maintained on EC2 at `~/deployments.log`:
+
+```
+2026-05-05T11:31:24Z 659c667... (rollback)
+2026-05-05T11:28:40Z 732601e...
+2026-05-05T11:13:08Z 659c667...
+```
+
+To rollback: GitHub → Actions → Rollback Deployment → Run workflow. Leave SHA empty to go back one version, or paste any SHA from the log to go back further. Rollback completes in under 60 seconds without rebuilding from source.
+
+The `${ROLLBACK_SHA:-latest}` pattern in `docker-compose.prod.yml` means normal deployments are completely unaffected — `ROLLBACK_SHA` is only set during a rollback run.
+
+---
+
+## Deployment Steps
+
+**Prerequisites**
+- AWS account with an EC2 instance (Ubuntu 22.04, t2.micro or t3.small)
+- Docker Hub account
+- GitHub account with repository access
+- Gemini API key (free at aistudio.google.com)
+- Tavily API key (free at tavily.com)
+
+**Step 1 — Clone this repository**
+
+```bash
+git clone https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent.git
+cd Retailmind-Autonomous_Retail_Research_Agent
+```
+
+**Step 2 — Launch AWS EC2 Instance**
+
+```
+Name:           retailmind-server
+AMI:            Ubuntu Server 22.04 LTS
+Instance type:  t3.small (recommended) or t2.micro (free tier)
+Key pair:       Create new → download the .pem file
+Security group: Allow ports 22 (SSH), 80 (HTTP), 8000 (API)
+```
+
+**Step 3 — Set up Docker on EC2**
+
+```bash
+ssh -i your-key.pem ubuntu@<your-ec2-public-ip>
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker ubuntu
+newgrp docker
+sudo apt-get install -y docker-compose-plugin
+```
+
+**Step 4 — Prepare the server**
+
+```bash
+git clone https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent.git ~/retailmind
+cd ~/retailmind
+cat > backend/.env << 'EOF'
+GEMINI_API_KEY=your_gemini_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
+KB_DIR=./knowledge_base
+CHROMA_DIR=./chroma_db
+EOF
+```
+
+**Step 5 — Add GitHub Secrets**
+
+```
+DOCKERHUB_USERNAME      → your Docker Hub username
+DOCKERHUB_TOKEN         → your Docker Hub access token
+EC2_HOST                → your EC2 public IP address
+EC2_USERNAME            → ubuntu
+EC2_SSH_KEY             → full contents of your .pem file
+GEMINI_API_KEY          → your Gemini API key
+TAVILY_API_KEY          → your Tavily API key
+```
+
+**Step 6 — Push to trigger the pipeline**
+
+```bash
+git push origin main
+```
+
+**Step 7 — Verify the deployment**
+
+```
+http://<your-ec2-public-ip>           → Frontend
+http://<your-ec2-public-ip>:8000/docs → FastAPI Swagger docs
+http://<your-ec2-public-ip>:8000/api/health → Health check
+```
+
+---
+
+## Running Locally
+
+```bash
+cp backend/.env.example backend/.env
+# Fill in your API keys in backend/.env
+docker compose up --build
+```
 
 ---
 
 ## GitHub Secrets Required
 
-Before the pipeline can run, these five secrets must be configured:
-
 | Secret | Description |
 |---|---|
 | `DOCKERHUB_USERNAME` | Docker Hub account username |
-| `DOCKERHUB_TOKEN` | Docker Hub access token (not password) |
-| `EC2_HOST` | Public IP address of your EC2 instance |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+| `EC2_HOST` | Public IP of your EC2 instance |
 | `EC2_USERNAME` | SSH username (typically `ubuntu`) |
-| `EC2_SSH_KEY` | Full PEM private key content for SSH access |
+| `EC2_SSH_KEY` | Full PEM private key content |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `TAVILY_API_KEY` | Tavily Search API key |
 
 ---
 
 ## Environment Variables
-
-The backend requires these variables in `backend/.env` on the server:
 
 | Variable | Required | Description |
 |---|---|---|
@@ -340,20 +306,9 @@ The backend requires these variables in `backend/.env` on the server:
 
 ---
 
-## Running Locally
+## Zero-Downtime Deployment
 
-```bash
-# Copy and fill in your API keys
-cp backend/.env.example backend/.env
-
-# Start the full stack
-docker compose up --build
-
-# Access the app
-# Frontend  → http://localhost
-# API docs  → http://localhost:8000/docs
-# Health    → http://localhost:8000/api/health
-```
+Docker Compose pulls the new image while the old container is still running. The `up -d` command replaces containers one service at a time, and the backend health check at `/api/health` confirms the new container is live before the old one is removed. The frontend nginx container serves cached static files during the transition.
 
 ---
 
@@ -361,15 +316,24 @@ docker compose up --build
 
 | Name | Enrollment Number |
 |---|---|
-| Anurag Didolkar | EN22CS301169 |
-| Anuj Singh Rathore | EN22CS301166 |
 | Aniket Kushwah | EN22CS301124 |
 | Arsh Patidar | EN22CS301204 |
 | Amit Patidar | EN22CS301114 |
+| Anurag Didolkar | EN22CS301169 |
+| Anuj Singh Rathore | EN22CS301166 |
 | Avani Gupta | EN22CS301236 |
+
+---
+
+## Faculty
+
+| Name | Role |
+|---|---|
+| Prof. Akshay Saxena | Industry Mentor |
+| Dr. Hemlata Patel | Faculty Guide |
+| Prof. Ajeet Singh Rajput | Faculty Guide |
 
 ---
 
 - **Institution** — Medicaps University, Datagami Skill Based Course
 - **Academic Year** — 2025–2026
-- **Industry Mentor** — Prof. Akshay Saxena
