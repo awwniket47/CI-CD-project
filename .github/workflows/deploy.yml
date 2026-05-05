@@ -171,3 +171,12 @@ jobs:
             curl -sf http://localhost:8000/api/health \
               && echo "✅ Deploy successful!" \
               || (echo "⚠️  Health check failed — dumping logs:" && docker compose logs backend --tail=30 && exit 1)
+
+            # ── 8. Record deployment version ─────────────────────────────
+            DEPLOY_LOG="$HOME/deployments.log"
+            TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            SHA="${{ github.sha }}"
+            echo "$TIMESTAMP $SHA" | cat - "$DEPLOY_LOG" 2>/dev/null | head -10 > "$DEPLOY_LOG.tmp"
+            mv "$DEPLOY_LOG.tmp" "$DEPLOY_LOG"
+            echo "📝 Deployment recorded: $SHA at $TIMESTAMP"
+            cat "$DEPLOY_LOG"
