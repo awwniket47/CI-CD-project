@@ -1,960 +1,1200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RetailMind — Autonomous Retail Research Agent</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@300;400;500;700;800;900&family=Instrument+Mono:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RetailMind — Autonomous Retail Research Agent</title>
+<style>
+/* ── RESET & BASE ───────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;font-size:16px;}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:#080b12;color:#e2e8f0;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none;}
+img{max-width:100%;display:block;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(148,163,184,0.15);border-radius:3px;}
 
-    :root {
-      --bg:       #03050a;
-      --surface:  rgba(255,255,255,0.04);
-      --surface2: rgba(255,255,255,0.07);
-      --border:   rgba(255,255,255,0.08);
-      --border2:  rgba(255,255,255,0.14);
-      --teal:     #00d4aa;
-      --teal2:    #00ffcc;
-      --blue:     #3b82f6;
-      --amber:    #f59e0b;
-      --red:      #ef4444;
-      --green:    #22c55e;
-      --text:     #f0f4f8;
-      --text2:    #8899aa;
-      --text3:    #445566;
-      --font:     'Cabinet Grotesk', sans-serif;
-      --mono:     'Instrument Mono', monospace;
-    }
+/* ── CSS VARIABLES ──────────────────────────────────────────────── */
+:root{
+  --bg0:#06080a; --bg1:#090e0e; --bg2:#0d1414; --bg3:#121c1c;
+  --border:#1a2e2a; --border2:rgba(0,212,170,0.18);
+  --teal:#00d4aa; --teal2:#00e5b8; --teal3:#80f5df;
+  --blue:#3b82f6; --blue2:#60a5fa; --blue3:#93c5fd;
+  --cyan:#22d3ee; --green:#4ade80; --amber:#fbbf24; --red:#f87171;
+  --text:#e8f5f3; --muted:#8ab5b0; --dim:#3d6b65;
+  --glow:rgba(0,212,170,0.15);
+  /* aliases for easy reference */
+  --primary:var(--teal); --primary2:var(--teal2); --primary3:var(--teal3);
+}
 
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
+/* ── ANNOUNCEMENT BAR ───────────────────────────────────────────── */
+.announce-bar{
+  background:linear-gradient(90deg,#06140f 0%,#060e0d 50%,#06140f 100%);
+  border-bottom:1px solid rgba(0,212,170,.12);
+  padding:9px 24px;text-align:center;
+  font-size:.78rem;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.announce-bar strong{color:var(--teal2);}
+.announce-bar a{color:var(--teal3);border-bottom:1px dashed rgba(0,212,170,.3);padding-bottom:1px;transition:color .2s;}
+.announce-bar a:hover{color:#fff;}
 
-    /* Noise grain overlay */
-    body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      opacity: 0.4;
-    }
+/* ── NAVBAR ─────────────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,11,18,.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 40px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+}
+.nav-logo{
+  display:flex;align-items:center;gap:10px;
+  font-size:1rem;font-weight:800;letter-spacing:-.02em;white-space:nowrap;
+}
+.nav-logo-icon{
+  width:30px;height:30px;border-radius:7px;
+  background:linear-gradient(135deg,#008a6e,#00d4aa);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;color:#04120f;box-shadow:0 0 16px rgba(0,212,170,.35);
+}
+.nav-links{display:flex;align-items:center;gap:4px;flex:1;margin-left:16px;}
+.nav-item{
+  position:relative;padding:6px 12px;border-radius:7px;
+  font-size:.82rem;font-weight:500;color:var(--muted);
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.04);}
+.nav-item.has-drop:after{content:'▾';margin-left:5px;font-size:.65rem;opacity:.5;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.btn-ghost{
+  padding:7px 16px;border-radius:7px;border:1px solid var(--border);
+  font-size:.8rem;font-weight:600;color:var(--muted);
+  cursor:pointer;transition:all .2s;background:transparent;font-family:inherit;
+}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2);}
+.btn-primary{
+  padding:8px 18px;border-radius:7px;
+  background:var(--teal);border:none;
+  font-size:.82rem;font-weight:700;color:#04120f;
+  cursor:pointer;transition:all .25s;font-family:inherit;
+  box-shadow:0 0 0 0 rgba(0,212,170,0);
+}
+.btn-primary:hover{background:var(--teal2);box-shadow:0 4px 20px rgba(0,212,170,.35);transform:translateY(-1px);}
 
-    .mesh {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 60% 50% at 20% 10%, rgba(0,212,170,0.09) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 60% at 80% 80%, rgba(59,130,246,0.07) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0,212,170,0.03) 0%, transparent 70%);
-    }
+/* DROPDOWN */
+.drop-wrap{position:relative;}
+.dropdown{
+  position:absolute;top:calc(100%+8px);left:0;min-width:260px;
+  background:#0e1726;border:1px solid var(--border);border-radius:12px;
+  padding:8px;box-shadow:0 16px 60px rgba(0,0,0,.6);
+  opacity:0;pointer-events:none;transform:translateY(8px);
+  transition:all .2s;z-index:200;
+}
+.drop-wrap:hover .dropdown{opacity:1;pointer-events:auto;transform:translateY(0);}
+.drop-item{
+  display:block;padding:10px 12px;border-radius:8px;
+  font-size:.82rem;color:var(--muted);transition:all .2s;
+}
+.drop-item:hover{background:rgba(0,212,170,.05);color:var(--text);}
+.drop-item strong{display:block;color:var(--text);font-weight:600;margin-bottom:2px;}
+.drop-item span{font-size:.75rem;color:var(--dim);}
 
-    section { position: relative; z-index: 1; }
+/* ── HERO ────────────────────────────────────────────────────────── */
+#hero{
+  min-height:calc(100vh - 100px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:80px 24px 60px;
+  position:relative;overflow:hidden;
+}
 
-    /* ── NAV ── */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      padding: 0 5%; display: flex; align-items: center; justify-content: space-between;
-      height: 68px;
-      background: rgba(3,5,10,0.75);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.03em; text-decoration: none; color: var(--text); }
-    .logo-dot { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--teal), var(--blue)); display: grid; place-items: center; font-size: 16px; }
-    .nav-links { display: flex; gap: 32px; list-style: none; }
-    .nav-links a { font-size: 0.875rem; color: var(--text2); text-decoration: none; transition: color 0.2s; font-weight: 500; }
-    .nav-links a:hover { color: var(--text); }
-    .nav-cta { background: var(--teal); color: #000; border: none; padding: 9px 20px; border-radius: 8px; font-size: 0.875rem; font-weight: 700; cursor: pointer; font-family: var(--font); text-decoration: none; transition: opacity 0.2s, transform 0.2s; }
-    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+/* Hero background: subtle dot grid + glow orbs */
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;}
+.hero-bg-grid{
+  position:absolute;inset:0;
+  background-image:radial-gradient(rgba(59,130,246,.07) 1px,transparent 1px);
+  background-size:32px 32px;
+  mask-image:radial-gradient(ellipse 90% 80% at 50% 40%,black 0%,transparent 100%);
+}
+.hero-glow{
+  position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;
+}
+.glow-blue{width:700px;height:600px;background:rgba(0,180,140,.1);top:-120px;left:20%;transform:translateX(-50%);}
+.glow-cyan{width:400px;height:400px;background:rgba(59,130,246,.08);top:-60px;right:5%;}
+.glow-purple{width:200px;height:200px;background:rgba(0,212,170,.05);bottom:30%;left:5%;}
 
-    /* ── HERO ── */
-    .hero {
-      min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center;
-      padding: 120px 5% 80px;
-    }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(0,212,170,0.08);
-      border: 1px solid rgba(0,212,170,0.25);
-      border-radius: 100px;
-      padding: 6px 18px;
-      font-size: 0.75rem; font-family: var(--mono); color: var(--teal);
-      margin-bottom: 32px;
-      animation: fadeUp 0.6s ease forwards;
-    }
-    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 2s ease infinite; }
-    .hero h1 {
-      font-size: clamp(3rem, 8vw, 6.5rem);
-      font-weight: 900; letter-spacing: -0.05em; line-height: 0.95;
-      margin-bottom: 28px;
-      animation: fadeUp 0.6s 0.1s ease both;
-    }
-    .hero h1 .grad {
-      background: linear-gradient(135deg, var(--teal2) 0%, var(--teal) 40%, var(--blue) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .hero p {
-      max-width: 560px; font-size: 1.1rem; color: var(--text2); line-height: 1.7;
-      margin: 0 auto 40px;
-      animation: fadeUp 0.6s 0.2s ease both;
-    }
-    .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; animation: fadeUp 0.6s 0.3s ease both; }
-    .btn-primary {
-      background: var(--teal); color: #000;
-      padding: 14px 28px; border-radius: 10px;
-      font-size: 0.95rem; font-weight: 700; cursor: pointer; border: none;
-      font-family: var(--font); text-decoration: none;
-      display: inline-flex; align-items: center; gap: 8px;
-      transition: all 0.2s;
-    }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,170,0.3); }
-    .btn-ghost {
-      background: var(--surface); color: var(--text);
-      padding: 14px 28px; border-radius: 10px;
-      font-size: 0.95rem; font-weight: 600; cursor: pointer;
-      border: 1px solid var(--border2);
-      font-family: var(--font); text-decoration: none;
-      display: inline-flex; align-items: center; gap: 8px;
-      transition: all 0.2s; backdrop-filter: blur(10px);
-    }
-    .btn-ghost:hover { background: var(--surface2); border-color: rgba(255,255,255,0.22); }
-    .stats-row { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 72px; animation: fadeUp 0.6s 0.4s ease both; }
-    .stat-item { padding: 20px 48px; text-align: center; border-right: 1px solid var(--border); }
-    .stat-item:last-child { border-right: none; }
-    .stat-num { font-size: 2.2rem; font-weight: 900; letter-spacing: -0.04em; background: linear-gradient(135deg, var(--teal), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .stat-label { font-size: 0.78rem; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+/* Animated orbit rings */
+.orbit-ring{
+  position:absolute;border-radius:50%;border:1px solid;
+  top:50%;left:50%;transform:translate(-50%,-50%);animation:spin linear infinite;
+}
+.ring1{width:520px;height:520px;border-color:rgba(0,212,170,.05);animation-duration:40s;}
+.ring2{width:700px;height:700px;border-color:rgba(59,130,246,.04);animation-duration:60s;animation-direction:reverse;}
+.ring3{width:880px;height:880px;border-color:rgba(0,212,170,.025);animation-duration:80s;}
+@keyframes spin{from{transform:translate(-50%,-50%) rotate(0deg);}to{transform:translate(-50%,-50%) rotate(360deg);}}
 
-    /* ── GLASS CARD ── */
-    .glass-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 18px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 0 0 1px rgba(0,212,170,0.08), 0 24px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
-      position: relative; overflow: hidden;
-    }
-    .glass-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,212,170,0.5), transparent); }
-    .card-titlebar { display: flex; align-items: center; gap: 7px; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); background: rgba(0,0,0,0.2); }
-    .dot { width: 11px; height: 11px; border-radius: 50%; }
-    .dot-r { background: #ff5f57; } .dot-y { background: #ffbd2e; } .dot-g { background: #28ca41; }
-    .card-title-text { margin-left: 8px; font-size: 12px; color: rgba(255,255,255,0.35); font-family: var(--mono); }
-    .card-spinner { margin-left: auto; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.12); border-top-color: var(--blue); animation: spin 0.9s linear infinite; }
+.hero-inner{position:relative;z-index:1;max-width:860px;width:100%;}
 
-    /* ── PIPELINE CARD STEPS ── */
-    .pipe-steps { display: flex; align-items: center; justify-content: center; padding: 22px 20px 16px; gap: 0; }
-    .pipe-step { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1; }
-    .pipe-circle { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; position: relative; font-size: 22px; }
-    .pipe-circle .check-badge { position: absolute; bottom: -2px; right: -2px; width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .pc-done   { background: rgba(16,110,86,0.25); border: 2px solid #1D9E75; }
-    .pc-active { background: rgba(24,95,165,0.25); border: 2px solid #3b82f6; }
-    .pc-idle   { background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.12); opacity: 0.4; }
-    .pipe-label { font-size: 11px; font-weight: 600; font-family: var(--mono); }
-    .pl-done   { color: #1D9E75; } .pl-active { color: #3b82f6; } .pl-idle { color: rgba(255,255,255,0.3); }
-    .pipe-arrow { font-size: 14px; color: rgba(255,255,255,0.15); margin-bottom: 18px; flex-shrink: 0; padding: 0 4px; }
-    .pipe-arrow.done { color: #1D9E75; }
-    .pulse-ring { position: absolute; inset: -5px; border-radius: 50%; border: 2px solid #3b82f6; opacity: 0; animation: pulseRing 1.6s ease-out infinite; }
-    .progress-wrap { margin: 0 18px 14px; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
-    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--teal), var(--blue)); border-radius: 2px; transition: width 1.2s ease; }
-    .card-log { margin: 0 16px 16px; background: rgba(0,0,0,0.35); border-radius: 10px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.06); min-height: 96px; }
-    .log-line { font-family: var(--mono); font-size: 11.5px; line-height: 1.8; color: rgba(255,255,255,0.3); }
-    .log-active { color: var(--teal); font-weight: 500; }
-    .log-ok { color: rgba(29,158,117,0.85); }
-    .cursor { display: inline-block; width: 7px; height: 12px; background: var(--teal); vertical-align: middle; margin-left: 2px; animation: blink 1s step-end infinite; }
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:5px 14px 5px 10px;border-radius:100px;
+  background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);
+  font-size:.72rem;font-weight:600;color:var(--teal2);
+  letter-spacing:.04em;margin-bottom:28px;
+  animation:fadeUp .5s ease both;
+}
+.badge-dot{
+  width:18px;height:18px;border-radius:50%;
+  background:rgba(0,212,170,.15);border:1px solid rgba(0,212,170,.4);
+  display:flex;align-items:center;justify-content:center;font-size:.6rem;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 
-    /* ── SECTION LABELS ── */
-    .label-tag { font-family: var(--mono); font-size: 0.72rem; color: var(--teal); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px; }
-    h2.sec-title { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 14px; }
-    .sec-sub { color: var(--text2); font-size: 0.975rem; line-height: 1.7; margin-bottom: 2rem; max-width: 520px; }
+h1{
+  font-size:clamp(2.6rem,6.5vw,5rem);font-weight:800;
+  line-height:1.08;letter-spacing:-.04em;
+  animation:fadeUp .5s .1s ease both;
+}
+h1 em{
+  font-style:normal;
+  background:linear-gradient(135deg,#00d4aa 0%,#00b8d9 55%,#3b82f6 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-tagline{
+  margin-top:16px;font-size:1.05rem;color:var(--muted);
+  line-height:1.7;animation:fadeUp .5s .18s ease both;
+}
+.hero-tagline span{color:var(--text);font-weight:600;}
 
-    /* ── HOW IT WORKS ── */
-    .how-section { padding: 100px 5%; max-width: 1100px; margin: 0 auto; }
-    .flow-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
-    .flow-step { background: var(--surface); border: 1px solid var(--border); padding: 32px 28px; position: relative; transition: all 0.25s; cursor: default; }
-    .flow-step:first-child { border-radius: 16px 0 0 16px; }
-    .flow-step:last-child { border-radius: 0 16px 16px 0; }
-    .flow-step:hover { background: var(--surface2); border-color: var(--border2); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.4); z-index: 2; }
-    .step-num { font-size: 0.68rem; font-family: var(--mono); color: var(--teal); margin-bottom: 16px; letter-spacing: 0.08em; }
-    .step-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
-    .step-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.02em; }
-    .step-desc { font-size: 0.875rem; color: var(--text2); line-height: 1.6; }
+.hero-sub-tags{
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  margin-top:22px;animation:fadeUp .5s .24s ease both;
+}
+.sub-tag{
+  font-size:.75rem;color:var(--dim);padding:3px 10px;
+  border:1px solid var(--border);border-radius:100px;
+}
+.sub-tag.hi{color:var(--teal2);border-color:rgba(0,212,170,.3);background:rgba(0,212,170,.07);font-weight:600;}
 
-    /* ── PIPELINE DEMO SECTION ── */
-    .pipeline-section { padding: 60px 5%; max-width: 1100px; margin: 0 auto; }
-    .pipeline-wrap { display: flex; align-items: center; gap: 64px; }
-    .pipeline-text { flex: 1; }
-    .pipeline-visual { flex: 1.2; }
-    .pipeline-text h2 { font-size: 2.6rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 16px; }
-    .pipeline-text p { color: var(--text2); line-height: 1.7; font-size: 0.975rem; }
+.hero-ctas{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+  margin-top:36px;animation:fadeUp .5s .3s ease both;
+}
+.cta-main{
+  padding:13px 28px;background:var(--teal);border-radius:9px;
+  font-weight:700;font-size:.92rem;color:#04120f;
+  display:inline-flex;align-items:center;gap:8px;
+  border:none;cursor:pointer;transition:all .25s;font-family:inherit;
+  box-shadow:0 8px 32px rgba(0,212,170,.3);
+}
+.cta-main:hover{background:var(--teal2);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,212,170,.4);}
+.cta-sec{
+  padding:13px 24px;background:rgba(255,255,255,.04);border-radius:9px;
+  font-weight:600;font-size:.9rem;color:var(--muted);
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--border);cursor:pointer;transition:all .25s;font-family:inherit;
+}
+.cta-sec:hover{color:var(--text);border-color:rgba(0,212,170,.25);background:rgba(0,212,170,.05);}
 
-    /* ── CI/CD SECTION ── */
-    .cicd-section { padding: 80px 5%; max-width: 1100px; margin: 0 auto; }
-    .cicd-wrap { display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: start; }
-    .cicd-text p { color: var(--text2); line-height: 1.7; font-size: 0.95rem; margin-bottom: 1rem; }
+/* STATS ROW */
+.hero-stats{
+  display:flex;gap:0;justify-content:center;
+  margin-top:56px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  animation:fadeUp .5s .38s ease both;
+  max-width:900px;margin-left:auto;margin-right:auto;width:100%;
+}
+.hero-stat{
+  flex:1;max-width:180px;padding:28px 20px;text-align:center;
+  border-right:1px solid var(--border);
+}
+.hero-stat:last-child{border-right:none;}
+.stat-val{
+  font-size:2rem;font-weight:800;letter-spacing:-.04em;
+  background:linear-gradient(135deg,#e8f5f3,#00d4aa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.stat-label{font-size:.72rem;color:var(--dim);margin-top:4px;font-weight:500;}
 
-    /* CI/CD pipeline visual */
-    .workflow-list { display: flex; flex-direction: column; gap: 10px; }
-    .workflow-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-      transition: border-color 0.2s;
-      cursor: pointer;
-    }
-    .workflow-card:hover { border-color: var(--border2); }
-    .workflow-card.active { border-color: rgba(0,212,170,0.4); box-shadow: 0 0 20px rgba(0,212,170,0.08); }
-    .wf-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
-    .wf-icon { font-size: 18px; }
-    .wf-name { font-size: 0.9rem; font-weight: 700; flex: 1; }
-    .wf-badge { font-size: 0.65rem; font-family: var(--mono); padding: 3px 10px; border-radius: 100px; border: 1px solid; }
-    .badge-ci  { background: rgba(59,130,246,0.12); color: #3b82f6; border-color: rgba(59,130,246,0.3); }
-    .badge-cd  { background: rgba(0,212,170,0.12); color: var(--teal); border-color: rgba(0,212,170,0.3); }
-    .badge-rb  { background: rgba(245,158,11,0.12); color: var(--amber); border-color: rgba(245,158,11,0.3); }
-    .wf-chevron { font-size: 12px; color: var(--text3); transition: transform 0.2s; }
+/* ── PRODUCT STRIP ───────────────────────────────────────────────── */
+.strip{
+  background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:64px 24px;text-align:center;
+}
+.strip-label{
+  font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:12px;
+}
+.strip-title{font-size:1rem;color:var(--muted);margin-bottom:48px;}
+.strip-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;max-width:1080px;margin:0 auto;
+  background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+}
+@media(max-width:640px){.strip-grid{grid-template-columns:1fr;}}
+.strip-card{
+  background:var(--bg1);padding:32px 24px;text-align:center;
+  transition:background .25s;cursor:default;
+}
+.strip-card:hover{background:var(--bg2);}
+.strip-icon{
+  width:48px;height:48px;border-radius:12px;margin:0 auto 16px;
+  background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.15);
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+}
+.strip-card h3{font-size:.88rem;font-weight:700;margin-bottom:8px;}
+.strip-card p{font-size:.78rem;color:var(--muted);line-height:1.65;}
 
-    .wf-body { display: none; border-top: 1px solid var(--border); padding: 16px 18px; }
-    .wf-body.open { display: block; }
+/* ── SECTION COMMONS ─────────────────────────────────────────────── */
+.section{padding:96px 24px;}
+.section.alt{background:var(--bg1);}
+.section.dark{background:#060911;}
+.container{max-width:1080px;margin:0 auto;padding:0 24px;}
+.section-eyebrow{
+  font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--teal2);margin-bottom:12px;
+}
+.section-title{
+  font-size:clamp(1.6rem,3.5vw,2.6rem);font-weight:800;
+  letter-spacing:-.03em;line-height:1.2;
+}
+.section-sub{font-size:.95rem;color:var(--muted);line-height:1.75;margin-top:12px;max-width:580px;}
 
-    .wf-stage {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      opacity: 0; transform: translateX(-8px);
-      transition: opacity 0.3s, transform 0.3s;
-    }
-    .wf-stage.visible { opacity: 1; transform: translateX(0); }
-    .wf-stage:last-child { border-bottom: none; }
-    .stage-indicator { display: flex; flex-direction: column; align-items: center; gap: 0; padding-top: 3px; }
-    .stage-dot-cicd { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .stage-line { width: 1px; background: rgba(255,255,255,0.08); flex: 1; min-height: 18px; margin-top: 3px; }
-    .stage-content { flex: 1; }
-    .stage-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 3px; }
-    .stage-sub { font-size: 0.72rem; color: var(--text3); font-family: var(--mono); line-height: 1.5; }
-    /* animated running dot */
-    .stage-dot-cicd.running { animation: stagePulse 1s ease infinite; }
-    @keyframes stagePulse { 0%,100%{box-shadow:0 0 0 0 currentColor; opacity:1} 50%{box-shadow:0 0 0 4px transparent; opacity:0.7} }
+/* ── ARCHITECTURE DIAGRAM ────────────────────────────────────────── */
+.arch-wrap{
+  margin-top:32px;background:var(--bg1);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+}
+.arch-header{
+  padding:14px 20px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.win-dot{width:11px;height:11px;border-radius:50%;}
+.win-r{background:#ef4444;} .win-y{background:#f59e0b;} .win-g{background:#22c55e;}
+.arch-title{font-size:.75rem;color:var(--dim);font-family:monospace;margin:0 auto;}
+.arch-body{padding:32px 28px;display:flex;flex-direction:column;gap:20px;overflow-x:auto;}
+.arch-flow{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:fit-content;}
+.arch-node{
+  padding:10px 14px;border-radius:10px;font-size:.76rem;font-weight:700;
+  display:flex;align-items:center;gap:7px;
+  border:1px solid;transition:all .3s;white-space:nowrap;flex-shrink:0;
+}
+.arch-node.user{background:rgba(0,212,170,.08);border-color:rgba(0,212,170,.25);color:#00d4aa;}
+.arch-node.researcher{background:rgba(0,184,217,.08);border-color:rgba(0,184,217,.25);color:#00b8d9;}
+.arch-node.analyst{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.25);color:#60a5fa;}
+.arch-node.writer{background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.25);color:#818cf8;}
+.arch-node.db{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2);color:#4ade80;}
+.arch-node.infra{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.2);color:#fbbf24;}
+.arch-arrow{color:var(--dim);font-size:.8rem;flex-shrink:0;}
+.arch-label{font-size:.7rem;color:var(--dim);font-style:italic;}
 
-    /* Live runner terminal */
-    .live-runner {
-      background: rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      margin-top: 14px;
-      overflow: hidden;
-    }
-    .runner-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .runner-title { font-size: 11px; font-family: var(--mono); color: rgba(255,255,255,0.35); flex: 1; }
-    .runner-status { font-size: 10px; font-family: var(--mono); }
-    .runner-log { padding: 12px 14px; min-height: 80px; max-height: 110px; overflow-y: auto; }
-    .runner-line { font-size: 11px; font-family: var(--mono); line-height: 1.8; }
-    .rl-cmd  { color: rgba(255,255,255,0.65); }
-    .rl-ok   { color: #1D9E75; }
-    .rl-info { color: #3b82f6; }
-    .rl-warn { color: var(--amber); }
-    .rl-err  { color: var(--red); }
+/* ── AGENTS SECTION ──────────────────────────────────────────────── */
+.agents-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  margin-top:48px;background:var(--border);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+}
+@media(max-width:720px){.agents-grid{grid-template-columns:1fr;}}
+.agent-card{
+  background:var(--bg0);padding:40px 32px;
+  transition:background .3s;
+}
+.agent-card:hover{background:var(--bg2);}
+.agent-num{
+  font-size:.65rem;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:20px;
+}
+.agent-card:nth-child(1) .agent-num{color:#00d4aa;}
+.agent-card:nth-child(2) .agent-num{color:#00b8d9;}
+.agent-card:nth-child(3) .agent-num{color:#3b82f6;}
+.agent-icon-wrap{
+  width:52px;height:52px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+  margin-bottom:20px;border:1px solid;
+}
+.agent-card:nth-child(1) .agent-icon-wrap{background:rgba(0,212,170,.08);border-color:rgba(0,212,170,.22);}
+.agent-card:nth-child(2) .agent-icon-wrap{background:rgba(0,184,217,.08);border-color:rgba(0,184,217,.22);}
+.agent-card:nth-child(3) .agent-icon-wrap{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.22);}
+.agent-card h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;}
+.agent-card p{font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:16px;}
+.agent-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.agent-tag{
+  padding:3px 9px;border-radius:5px;font-size:.7rem;font-weight:600;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--dim);
+}
 
-    /* Deployment log */
-    .deploy-log-box {
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 16px;
-      font-family: var(--mono);
-      font-size: 12px;
-      margin-top: 1.5rem;
-    }
-    .deploy-log-title { font-size: 10px; color: var(--text3); margin-bottom: 10px; letter-spacing: 0.06em; }
-    .deploy-entry { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .deploy-entry:last-child { border-bottom: none; }
-    .deploy-sha { color: #3b82f6; flex: 1; }
-    .deploy-ts { font-size: 10px; color: var(--text3); }
-    .deploy-tag { font-size: 10px; background: rgba(245,158,11,0.15); color: var(--amber); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.25); }
-    .deploy-live { font-size: 10px; background: rgba(0,212,170,0.12); color: var(--teal); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(0,212,170,0.25); display: flex; align-items: center; gap: 4px; }
+/* ── LIVE DEMO TERMINAL ──────────────────────────────────────────── */
+.terminal-wrap{
+  margin-top:56px;background:var(--bg1);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);
+}
+.terminal-header{
+  padding:12px 18px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.t-title{font-size:.75rem;color:var(--dim);font-family:monospace;margin:0 auto;}
+.terminal-body{padding:0;}
+.terminal-input-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2);
+}
+.t-prompt{font-size:.8rem;color:var(--teal2);font-family:monospace;font-weight:700;flex-shrink:0;}
+.t-input{
+  flex:1;background:transparent;border:none;outline:none;
+  font-family:monospace;font-size:.82rem;color:var(--text);
+}
+.t-run{
+  padding:6px 16px;background:var(--teal);border:none;border-radius:6px;
+  color:#04120f;font-size:.75rem;font-weight:700;cursor:pointer;
+  transition:all .2s;font-family:inherit;flex-shrink:0;
+}
+.t-run:hover{background:var(--teal2);}
+.t-run:disabled{opacity:.4;cursor:not-allowed;}
+.terminal-output{
+  padding:20px;font-family:monospace;font-size:.76rem;line-height:1.9;
+  min-height:160px;max-height:300px;overflow-y:auto;
+  background:#060911;color:var(--muted);
+}
+.t-dim{color:#374151;} .t-blue{color:#00d4aa;} .t-green{color:#4ade80;}
+.t-cyan{color:#00b8d9;} .t-amber{color:#fbbf24;} .t-pink{color:#f472b6;}
+.t-line{display:block;animation:lineIn .15s ease both;}
+@keyframes lineIn{from{opacity:0;}to{opacity:1;}}
+.t-progress-bar{
+  height:2px;background:var(--border);overflow:hidden;
+}
+.t-progress-fill{
+  height:100%;background:linear-gradient(90deg,#00d4aa,#00b8d9,#3b82f6);
+  width:0%;transition:width .4s ease;
+}
 
-    /* ── FEATURES ── */
-    .features-section { padding: 80px 5%; max-width: 1100px; margin: 0 auto; }
-    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; }
-    .feature-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px; padding: 28px;
-      transition: all 0.25s; position: relative; overflow: hidden;
-    }
-    .feature-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,212,170,0.04), transparent); opacity: 0; transition: opacity 0.25s; }
-    .feature-card:hover { border-color: rgba(0,212,170,0.25); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.35); }
-    .feature-card:hover::after { opacity: 1; }
-    .feat-icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.2); display: grid; place-items: center; font-size: 20px; margin-bottom: 18px; }
-    .feat-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-    .feat-desc  { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+/* ── DEVOPS SECTION ──────────────────────────────────────────────── */
+.devops-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px;}
+@media(max-width:720px){.devops-layout{grid-template-columns:1fr;}}
+.devops-card{
+  background:var(--bg1);border:1px solid var(--border);border-radius:14px;
+  padding:30px;transition:border-color .3s;
+}
+.devops-card:hover{border-color:var(--border2);}
+.dc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
+.dc-title{font-size:.92rem;font-weight:700;}
+.dc-trigger{font-size:.68rem;color:var(--dim);font-family:monospace;margin-top:2px;}
+.dc-badge{
+  padding:3px 10px;border-radius:100px;font-size:.68rem;font-weight:700;
+  font-family:monospace;
+}
+.badge-pass{background:rgba(0,212,170,.1);color:#00d4aa;border:1px solid rgba(0,212,170,.25);}
+.badge-run{background:rgba(0,184,217,.1);color:#00b8d9;border:1px solid rgba(0,184,217,.25);}
+.badge-idle{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.2);}
+.dc-steps{display:flex;flex-direction:column;gap:8px;}
+.dc-step{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 13px;background:rgba(0,0,0,.25);border-radius:8px;
+  border:1px solid rgba(255,255,255,.03);
+}
+.dc-step-ico{font-size:.85rem;width:18px;flex-shrink:0;margin-top:1px;}
+.dc-step-text{font-size:.78rem;color:var(--muted);line-height:1.5;}
+.dc-step-text strong{display:block;color:var(--text);font-size:.8rem;margin-bottom:2px;}
 
-    /* ── TECH STACK ── */
-    .tech-section { padding: 80px 5%; max-width: 1100px; margin: 0 auto; }
-    .tech-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 48px; }
-    .tech-pill { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 10px 20px; font-size: 0.875rem; font-weight: 600; transition: all 0.2s; cursor: default; }
-    .tech-pill:hover { background: var(--surface2); border-color: var(--border2); transform: translateY(-2px); }
-    .tech-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* Deployment log */
+.deploy-log{
+  margin-top:20px;background:rgba(0,0,0,.3);border-radius:9px;
+  border:1px solid rgba(0,212,170,.12);padding:14px 16px;font-family:monospace;
+}
+.deploy-log-title{font-size:.65rem;color:var(--dim);margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase;}
+.deploy-entry{
+  display:flex;align-items:center;gap:10px;font-size:.72rem;
+  padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);
+}
+.deploy-entry:last-child{border-bottom:none;}
+.de-sha{color:#00b8d9;} .de-time{color:var(--dim);flex:1;}
+.de-tag{padding:1px 7px;border-radius:4px;font-size:.63rem;font-weight:700;}
+.tag-latest{background:rgba(0,212,170,.15);color:#00d4aa;}
+.tag-rb{background:rgba(251,191,36,.15);color:#fbbf24;}
 
-    /* ── CTA ── */
-    .cta-section { padding: 120px 5%; text-align: center; position: relative; }
-    .cta-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 600px; height: 300px; background: radial-gradient(ellipse, rgba(0,212,170,0.08), transparent 70%); pointer-events: none; }
-    .cta-section h2 { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 20px; position: relative; }
-    .cta-section p { color: var(--text2); font-size: 1rem; margin-bottom: 40px; position: relative; }
+/* ── TECH SCROLL ─────────────────────────────────────────────────── */
+.tech-section{overflow:hidden;padding:56px 0;background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.tech-scroll-title{text-align:center;margin-bottom:32px;font-size:.7rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.tech-scroll-track{display:flex;gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.tech-scroll-inner{
+  display:flex;gap:0;
+  animation:marquee 30s linear infinite;
+}
+@keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.tech-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:16px 28px;white-space:nowrap;border-right:1px solid var(--border);
+  font-size:.82rem;font-weight:600;color:var(--muted);
+}
+.tech-chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 
-    /* ── FOOTER ── */
-    footer { border-top: 1px solid var(--border); padding: 40px 5%; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
-    .footer-copy { font-size: 0.8rem; color: var(--text3); }
-    .footer-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-    .footer-tag { font-size: 0.7rem; font-family: var(--mono); color: var(--text3); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; }
+/* ── FEATURES GRID ───────────────────────────────────────────────── */
+.feat-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  margin-top:48px;background:var(--border);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+}
+@media(max-width:720px){.feat-grid{grid-template-columns:1fr;}}
+@media(min-width:721px) and (max-width:960px){.feat-grid{grid-template-columns:repeat(2,1fr);}}
+.feat-card{
+  background:var(--bg0);padding:32px 28px;transition:background .25s;
+}
+.feat-card:hover{background:var(--bg2);}
+.feat-ico{
+  width:40px;height:40px;border-radius:9px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  background:rgba(0,212,170,.07);border:1px solid rgba(0,212,170,.14);
+}
+.feat-card h3{font-size:.9rem;font-weight:700;margin-bottom:7px;}
+.feat-card p{font-size:.8rem;color:var(--muted);line-height:1.65;}
 
-    /* ── SCROLL REVEAL ── */
-    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-left { opacity: 0; transform: translateX(-30px); transition: opacity 0.7s ease, transform 0.7s ease; }
-    .reveal-left.visible { opacity: 1; transform: translateX(0); }
-    .reveal-right { opacity: 0; transform: translateX(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
-    .reveal-right.visible { opacity: 1; transform: translateX(0); }
-    .reveal-scale { opacity: 0; transform: scale(0.92); transition: opacity 0.6s ease, transform 0.6s ease; }
-    .reveal-scale.visible { opacity: 1; transform: scale(1); }
-    .stagger > * { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
-    .stagger.visible > *:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
-    .stagger.visible > *:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.08s; }
-    .stagger.visible > *:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.16s; }
-    .stagger.visible > *:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.24s; }
-    .stagger.visible > *:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.32s; }
-    .stagger.visible > *:nth-child(6) { opacity: 1; transform: translateY(0); transition-delay: 0.40s; }
+/* ── INSTALL SECTION (like Nautilus pip install) ─────────────────── */
+.install-section{
+  background:var(--bg1);border-top:1px solid var(--border);
+  padding:80px 24px;text-align:center;
+}
+.install-box{
+  display:inline-flex;align-items:center;gap:0;
+  background:#060911;border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;margin:32px 0 12px;font-family:monospace;font-size:.88rem;
+}
+.install-label{
+  padding:14px 16px;background:rgba(0,212,170,.08);
+  border-right:1px solid var(--border);color:var(--teal2);font-weight:700;
+}
+.install-cmd{padding:14px 20px;color:var(--text);}
+.install-cmd .arg{color:#00d4aa;}
+.install-copy{
+  padding:14px 16px;border-left:1px solid var(--border);
+  color:var(--dim);cursor:pointer;transition:all .2s;background:transparent;border-top:none;border-right:none;border-bottom:none;
+  font-size:.9rem;font-family:inherit;
+}
+.install-copy:hover{color:var(--text);background:rgba(255,255,255,.04);}
+.install-meta{font-size:.75rem;color:var(--dim);margin-top:8px;}
+.install-meta span{color:var(--teal2);}
 
-    /* ── ANIMATIONS ── */
-    @keyframes fadeUp    { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes pulse     { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.4)} }
-    @keyframes spin      { to { transform: rotate(360deg); } }
-    @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
-    @keyframes pulseRing { 0%{opacity:0.8;transform:scale(1)} 100%{opacity:0;transform:scale(1.5)} }
-    @keyframes logIn     { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:translateX(0)} }
-    @keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-    @keyframes countUp   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+/* ── TEAM ────────────────────────────────────────────────────────── */
+.team-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:16px;margin-top:48px;
+}
+.team-card{
+  background:var(--bg1);border:1px solid var(--border);border-radius:12px;
+  padding:24px 18px;text-align:center;transition:all .3s;
+}
+.team-card:hover{border-color:rgba(0,212,170,.3);transform:translateY(-3px);}
+.team-av{
+  width:48px;height:48px;border-radius:50%;margin:0 auto 12px;
+  background:linear-gradient(135deg,#006e5a,#00d4aa);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:1rem;color:#04120f;
+}
+.team-name{font-size:.82rem;font-weight:700;}
+.team-id{font-size:.67rem;color:var(--dim);margin-top:3px;font-family:monospace;}
+.faculty-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:28px;}
+.faculty-card{
+  flex:1;min-width:200px;padding:18px 20px;
+  background:rgba(0,212,170,.04);border:1px solid rgba(0,212,170,.15);
+  border-radius:10px;display:flex;align-items:center;gap:14px;transition:all .3s;
+}
+.faculty-card:hover{border-color:rgba(0,212,170,.35);}
+.faculty-av{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#005c4b,#00b8d9);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.85rem;color:#04120f;
+}
+.faculty-name{font-size:.84rem;font-weight:700;}
+.faculty-role{font-size:.7rem;color:var(--dim);margin-top:2px;}
 
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+/* ── FINAL CTA ───────────────────────────────────────────────────── */
+.final-cta{
+  padding:100px 24px;text-align:center;
+  background:linear-gradient(180deg,var(--bg0) 0%,#08102a 50%,var(--bg0) 100%);
+  border-top:1px solid var(--border);position:relative;overflow:hidden;
+}
+.final-cta-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 60% at 50% 50%,rgba(0,212,170,.07) 0%,transparent 70%);
+}
+.final-cta-inner{position:relative;z-index:1;max-width:560px;margin:0 auto;}
+.final-cta h2{font-size:clamp(1.8rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:14px;}
+.final-cta p{font-size:.95rem;color:var(--muted);margin-bottom:36px;}
+.final-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
 
-    @media (max-width: 900px) {
-      .pipeline-wrap, .cicd-wrap { flex-direction: column; gap: 40px; }
-      .flow-steps { grid-template-columns: 1fr; gap: 12px; }
-      .flow-step { border-radius: 14px !important; }
-      .features-grid { grid-template-columns: 1fr 1fr; }
-      .nav-links { display: none; }
-      .stat-item { padding: 16px 24px; }
-      .cicd-wrap { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 480px) { .features-grid { grid-template-columns: 1fr; } }
-  </style>
+/* ── FOOTER ──────────────────────────────────────────────────────── */
+footer{
+  background:var(--bg1);border-top:1px solid var(--border);
+  padding:56px 40px 32px;
+}
+.footer-top{
+  display:grid;grid-template-columns:200px repeat(3,1fr);gap:32px;
+  margin-bottom:48px;
+}
+@media(max-width:720px){.footer-top{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.footer-top{grid-template-columns:1fr;}}
+.footer-brand .logo{
+  display:flex;align-items:center;gap:9px;
+  font-size:.95rem;font-weight:800;margin-bottom:12px;
+}
+.footer-brand .logo-ico{
+  width:27px;height:27px;border-radius:6px;
+  background:linear-gradient(135deg,#008a6e,#00d4aa);
+  display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#04120f;
+}
+.footer-desc{font-size:.78rem;color:var(--dim);line-height:1.7;}
+.footer-col h4{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.footer-col a{
+  display:block;font-size:.8rem;color:var(--dim);padding:4px 0;
+  transition:color .2s;
+}
+.footer-col a:hover{color:var(--text);}
+.footer-bottom{
+  border-top:1px solid var(--border);padding-top:24px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  font-size:.72rem;color:var(--dim);
+}
+.footer-links{display:flex;gap:20px;}
+.footer-links a{color:var(--dim);transition:color .2s;}
+.footer-links a:hover{color:var(--text);}
+
+/* ── REVEAL ANIMATIONS ───────────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease;}
+.reveal.in{opacity:1;transform:translateY(0);}
+.reveal-delay-1{transition-delay:.1s;}
+.reveal-delay-2{transition-delay:.2s;}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────── */
+@media(max-width:768px){
+  nav{padding:0 20px;}
+  .nav-links,.nav-item.has-drop{display:none;}
+  footer{padding:40px 20px 24px;}
+  .hero-stats{flex-wrap:wrap;}
+  .hero-stat{min-width:120px;}
+}
+</style>
 </head>
 <body>
-<div class="mesh"></div>
 
-<!-- NAV -->
+<!-- ANNOUNCE BAR -->
+<div class="announce-bar">
+  <strong>RetailMind v2.0</strong> · CI/CD pipeline live on AWS EC2 ·
+  <a href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent">See on GitHub →</a>
+</div>
+
+<!-- NAVBAR -->
 <nav>
-  <a href="#" class="nav-logo">
-    <div class="logo-dot">🛒</div>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">🛒</div>
     RetailMind
-  </a>
-  <ul class="nav-links">
-    <li><a href="#pipeline">Pipeline</a></li>
-    <li><a href="#how">How it works</a></li>
-    <li><a href="#cicd">CI/CD</a></li>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#stack">Tech Stack</a></li>
-  </ul>
-  <a href="/app" class="nav-cta">Launch App →</a>
+  </div>
+
+  <div class="nav-links">
+    <div class="drop-wrap">
+      <div class="nav-item has-drop">Solutions</div>
+      <div class="dropdown">
+        <a class="drop-item" href="#agents"><strong>AI Agent Pipeline</strong><span>Three autonomous agents for retail research.</span></a>
+        <a class="drop-item" href="#devops"><strong>CI/CD & DevOps</strong><span>Automated deploy on every git push.</span></a>
+        <a class="drop-item" href="#features"><strong>Knowledge Base</strong><span>ChromaDB vector search over all reports.</span></a>
+      </div>
+    </div>
+    <div class="drop-wrap">
+      <div class="nav-item has-drop">Company</div>
+      <div class="dropdown">
+        <a class="drop-item" href="#team"><strong>Team</strong><span>6 students · Medicaps University.</span></a>
+        <a class="drop-item" href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank"><strong>Open Source</strong><span>Apache 2.0 · MIT licensed.</span></a>
+      </div>
+    </div>
+    <div class="drop-wrap">
+      <div class="nav-item has-drop">Resources</div>
+      <div class="dropdown">
+        <a class="drop-item" href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent#readme" target="_blank"><strong>Docs</strong><span>README, architecture, setup guide.</span></a>
+        <a class="drop-item" href="#devops"><strong>CI/CD Quality</strong><span>Tests, Docker builds, deployment logs.</span></a>
+      </div>
+    </div>
+    <a class="nav-item" href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank">GitHub</a>
+  </div>
+
+  <div class="nav-right">
+    <button class="btn-ghost" onclick="window.open('https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent','_blank')">⭐ Star on GitHub</button>
+    <button class="btn-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Try Demo →</button>
+  </div>
 </nav>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-badge"><span class="badge-dot"></span>CSE Final Year Project · 2026 · Live on AWS EC2</div>
-  <h1>Autonomous<br /><span class="grad">Retail Research</span><br />Agent</h1>
-  <p>Three AI agents search the web, extract insights, and write a professional research report — saved to a vector database. Deployed with full CI/CD automation on every Git push.</p>
-  <div class="hero-actions">
-    <a href="/app" class="btn-primary">Launch App <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-    <a href="#how" class="btn-ghost">How it works</a>
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-bg">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-glow glow-blue"></div>
+    <div class="hero-glow glow-cyan"></div>
+    <div class="hero-glow glow-purple"></div>
+    <div class="orbit-ring ring1"></div>
+    <div class="orbit-ring ring2"></div>
+    <div class="orbit-ring ring3"></div>
   </div>
-  <div class="stats-row">
-    <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">AI Agents</div></div>
-    <div class="stat-item"><div class="stat-num">~2min</div><div class="stat-label">Per Research</div></div>
-    <div class="stat-item"><div class="stat-num">600+</div><div class="stat-label">Words / Report</div></div>
-    <div class="stat-item"><div class="stat-num">100%</div><div class="stat-label">Auto Deploy</div></div>
-  </div>
-</section>
-
-<!-- PIPELINE DEMO SECTION -->
-<section class="pipeline-section reveal" id="pipeline">
-  <div class="pipeline-wrap">
-    <div class="pipeline-text reveal-left">
-      <div class="label-tag">Live Agent Pipeline</div>
-      <h2 class="sec-title">Watch three agents<br />work in real time</h2>
-      <p style="margin-bottom:18px">Every step of the research process streams live to your browser via Server-Sent Events — no polling, no page refresh.</p>
-      <p>Each agent hands its output to the next automatically. Sequential, transparent, reliable.</p>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <div class="badge-dot">🎓</div>
+      CSE Final Year Project · Medicaps University · 2025–2026
     </div>
-    <div class="pipeline-visual reveal-right">
-      <div class="glass-card">
-        <div class="card-titlebar">
-          <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
-          <span class="card-title-text" id="demo-title">retail-research-agent — running</span>
-          <div class="card-spinner" id="demo-spinner"></div>
-        </div>
-        <div class="pipe-steps">
-          <!-- Researcher -->
-          <div class="pipe-step">
-            <div class="pipe-circle" id="pc-researcher" style="background:rgba(16,110,86,0.25);border:2px solid #1D9E75">
-              🔍
-              <div class="check-badge" style="background:#0F6E56;border:2px solid #03050a"><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="#9FE1CB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg></div>
-            </div>
-            <span class="pipe-label" id="pl-researcher" style="color:#1D9E75">Researcher</span>
-          </div>
-          <div class="pipe-arrow" id="arr-1" style="color:#1D9E75">→</div>
-          <!-- Analyst -->
-          <div class="pipe-step">
-            <div class="pipe-circle" id="pc-analyst" style="background:rgba(16,110,86,0.25);border:2px solid #1D9E75">
-              🧠
-              <div class="check-badge" style="background:#0F6E56;border:2px solid #03050a"><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="#9FE1CB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg></div>
-            </div>
-            <span class="pipe-label" id="pl-analyst" style="color:#1D9E75">Analyst</span>
-          </div>
-          <div class="pipe-arrow" id="arr-2" style="color:#1D9E75">→</div>
-          <!-- Writer -->
-          <div class="pipe-step">
-            <div class="pipe-circle pc-active" id="pc-writer" style="position:relative">
-              ✍️
-              <div class="pulse-ring"></div>
-            </div>
-            <span class="pipe-label pl-active" id="pl-writer">Writer</span>
-          </div>
-          <div class="pipe-arrow" id="arr-3">→</div>
-          <!-- ChromaDB -->
-          <div class="pipe-step">
-            <div class="pipe-circle pc-idle" id="pc-chroma">💾</div>
-            <span class="pipe-label pl-idle" id="pl-chroma">ChromaDB</span>
-          </div>
-        </div>
-        <div class="progress-wrap"><div class="progress-fill" id="demo-prog"></div></div>
-        <div class="card-log" id="demo-log"></div>
+
+    <h1>The autonomous<br><em>retail research</em><br>agent</h1>
+
+    <p class="hero-tagline">
+      <span>Three AI agents.</span> One research question. A complete professional report —
+      searched, analysed, written, and permanently stored in a vector database.
+      Deployed with full CI/CD automation on AWS EC2.
+    </p>
+
+    <div class="hero-sub-tags">
+      <span class="sub-tag hi">Gemini 2.0 Flash</span>
+      <span class="sub-tag hi">CrewAI</span>
+      <span class="sub-tag hi">ChromaDB</span>
+      <span class="sub-tag hi">FastAPI + SSE</span>
+      <span class="sub-tag hi">Docker · GitHub Actions · AWS EC2</span>
+    </div>
+
+    <div class="hero-ctas">
+      <a class="cta-main" href="/app">
+        🚀 Launch App
+      </a>
+      <a class="cta-sec" href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="stat-val">3</div>
+        <div class="stat-label">Autonomous Agents</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-val">~2 min</div>
+        <div class="stat-label">Per Full Report</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-val">600+</div>
+        <div class="stat-label">Words Per Report</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-val">100%</div>
+        <div class="stat-label">Automated Deploy</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-val">&lt;60 s</div>
+        <div class="stat-label">Rollback Time</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="how-section" id="how">
-  <div style="text-align:center;margin-bottom:56px" class="reveal">
-    <div class="label-tag" style="display:inline-block">How it works</div>
-    <h2 class="sec-title">One query. Three agents.<br />A complete report.</h2>
-    <p class="sec-sub" style="margin:0 auto">The system handles everything automatically — from web search to writing and storing the final report.</p>
-  </div>
-  <div class="flow-steps stagger">
-    <div class="flow-step">
-      <div class="step-num">STEP 01</div>
-      <span class="step-icon">💬</span>
-      <div class="step-title">You ask a question</div>
-      <div class="step-desc">Type any retail industry question — trends, technologies, strategies, market analysis. Natural language understood.</div>
+<!-- ══ PRODUCT STRIP ══════════════════════════════════════════════════ -->
+<section class="strip">
+  <div class="strip-label">What it does</div>
+  <p class="strip-title">From one question to a full research report — automatically</p>
+  <div class="strip-grid">
+    <div class="strip-card">
+      <div class="strip-icon">🌐</div>
+      <h3>Search the web</h3>
+      <p>Researcher agent dispatches 3+ Tavily queries and gathers live data from authoritative sources.</p>
     </div>
-    <div class="flow-step">
-      <div class="step-num">STEP 02</div>
-      <span class="step-icon">🔍</span>
-      <div class="step-title">Agents search & analyse</div>
-      <div class="step-desc">The Researcher runs 3+ Tavily queries. The Analyst extracts 5–7 key insights with statistics and real company examples.</div>
+    <div class="strip-card">
+      <div class="strip-icon">🧠</div>
+      <h3>Extract insights</h3>
+      <p>Analyst agent uses Gemini 2.0 Flash to identify 5–7 key insights, statistics, and company examples.</p>
     </div>
-    <div class="flow-step">
-      <div class="step-num">STEP 03</div>
-      <span class="step-icon">📄</span>
-      <div class="step-title">Report saved forever</div>
-      <div class="step-desc">The Writer produces a 600+ word structured report. Saved to ChromaDB as a vector embedding — semantically searchable forever.</div>
+    <div class="strip-card">
+      <div class="strip-icon">✍️</div>
+      <h3>Write the report</h3>
+      <p>Writer agent produces a 600+ word structured markdown report — professional quality every time.</p>
+    </div>
+    <div class="strip-card">
+      <div class="strip-icon">💾</div>
+      <h3>Store forever</h3>
+      <p>Every report is vector-embedded with all-MiniLM-L6-v2 in ChromaDB and backed up as a .txt file.</p>
+    </div>
+    <div class="strip-card">
+      <div class="strip-icon">🔍</div>
+      <h3>Search semantically</h3>
+      <p>Find conceptually related reports by meaning — not just keywords — using ChromaDB vector similarity.</p>
+    </div>
+    <div class="strip-card">
+      <div class="strip-icon">🚀</div>
+      <h3>Auto-deploy on push</h3>
+      <p>A single <code style="color:#00d4aa;font-family:monospace">git push</code> triggers CI tests, Docker builds, and live EC2 deployment.</p>
     </div>
   </div>
 </section>
 
-<!-- CI/CD SECTION -->
-<section class="cicd-section" id="cicd">
-  <div class="cicd-wrap">
-    <div class="reveal-left">
-      <div class="label-tag">DevOps & CI/CD</div>
-      <h2 class="sec-title">Production-grade deployment on AWS EC2</h2>
-      <p class="cicd-text">Three GitHub Actions workflows automate the entire lifecycle — testing, building Docker images, and deploying on every merge to <code style="font-family:var(--mono);font-size:0.85em;background:var(--surface2);padding:2px 6px;border-radius:4px">main</code>.</p>
-      <p class="cicd-text">Every deployment is immutably tagged with its git SHA on Docker Hub. Roll back to any previous version in under 60 seconds directly from GitHub Actions.</p>
+<!-- ══ AGENTS ═════════════════════════════════════════════════════════ -->
+<section class="section dark" id="agents">
+  <div class="container">
+    <div class="section-eyebrow reveal">Agent Architecture</div>
+    <div class="section-title reveal">Three autonomous agents.<br>Sequential, transparent, reliable.</div>
+    <p class="section-sub reveal">Built with CrewAI and LangChain. Each agent is purpose-built, receives output from the previous, and passes its result forward. Every step streams live.</p>
 
-      <div class="deploy-log-box reveal">
-        <div class="deploy-log-title">~/deployments.log — EC2 · live feed</div>
-        <div id="deploy-log-entries">
-          <div class="deploy-entry">
-            <svg width="10" height="10" style="flex-shrink:0"><circle cx="5" cy="5" r="5" fill="#1D9E75"/></svg>
-            <span class="deploy-sha">732601e...</span>
-            <span class="deploy-ts">2026-05-05 11:28Z</span>
-            <span class="deploy-live"><svg width="6" height="6" style="border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 1.5s ease infinite"></svg>latest</span>
-          </div>
-          <div class="deploy-entry">
-            <svg width="10" height="10" style="flex-shrink:0"><circle cx="5" cy="5" r="5" fill="#3b82f6"/></svg>
-            <span class="deploy-sha">659c667...</span>
-            <span class="deploy-ts">2026-05-05 11:13Z</span>
-            <span class="deploy-tag">rollback</span>
-          </div>
-          <div class="deploy-entry">
-            <svg width="10" height="10" style="flex-shrink:0"><circle cx="5" cy="5" r="5" fill="#445566"/></svg>
-            <span class="deploy-sha" style="color:var(--text3)">a1b2c3d...</span>
-            <span class="deploy-ts">2026-05-05 10:55Z</span>
-          </div>
+    <div class="agents-grid">
+      <div class="agent-card reveal">
+        <div class="agent-num">Agent 01 — Researcher</div>
+        <div class="agent-icon-wrap">🔍</div>
+        <h3>Researcher</h3>
+        <p>Dispatches 3+ parallel Tavily web searches, collects and deduplicates 10–15 source articles, and structures raw data for the analyst. Streams every query result via SSE.</p>
+        <div class="agent-tags">
+          <span class="agent-tag">Tavily API</span>
+          <span class="agent-tag">LangChain Tool</span>
+          <span class="agent-tag">SSE Streaming</span>
+          <span class="agent-tag">CrewAI Agent</span>
+        </div>
+      </div>
+      <div class="agent-card reveal reveal-delay-1">
+        <div class="agent-num">Agent 02 — Analyst</div>
+        <div class="agent-icon-wrap">🧠</div>
+        <h3>Analyst</h3>
+        <p>Receives raw search data, sends it to Google Gemini 2.0 Flash, and extracts 5–7 key insights: market statistics, adoption rates, company case studies, and forward projections.</p>
+        <div class="agent-tags">
+          <span class="agent-tag">Gemini 2.0 Flash</span>
+          <span class="agent-tag">Insight Extraction</span>
+          <span class="agent-tag">LangChain</span>
+          <span class="agent-tag">Structured Output</span>
+        </div>
+      </div>
+      <div class="agent-card reveal reveal-delay-2">
+        <div class="agent-num">Agent 03 — Writer</div>
+        <div class="agent-icon-wrap">✍️</div>
+        <h3>Writer</h3>
+        <p>Takes analyst insights and drafts a 600+ word professional research report in structured markdown — with Executive Summary, Market Analysis, Case Studies, and Recommendations.</p>
+        <div class="agent-tags">
+          <span class="agent-tag">Gemini 2.0 Flash</span>
+          <span class="agent-tag">Markdown Output</span>
+          <span class="agent-tag">600+ Words</span>
+          <span class="agent-tag">ChromaDB Save</span>
         </div>
       </div>
     </div>
 
-    <div class="reveal-right">
-      <div class="workflow-list" id="workflow-list">
-
-        <!-- CI Workflow -->
-        <div class="workflow-card active" id="wf-ci" onclick="toggleWorkflow('ci')">
-          <div class="wf-header">
-            <span class="wf-icon">🔀</span>
-            <span class="wf-name">CI Workflow</span>
-            <span class="wf-badge badge-ci">every push / PR</span>
-            <span class="wf-chevron" id="chev-ci" style="transform:rotate(180deg)">▾</span>
-          </div>
-          <div class="wf-body open" id="body-ci">
-            <div class="wf-stage" id="ci-s1">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:#1D9E75"></div><div class="stage-line"></div></div>
-              <div class="stage-content"><div class="stage-title">Backend tests</div><div class="stage-sub">pytest · ruff lint · 4 test modules</div></div>
-            </div>
-            <div class="wf-stage" id="ci-s2">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:#1D9E75"></div><div class="stage-line"></div></div>
-              <div class="stage-content"><div class="stage-title">Frontend build check</div><div class="stage-sub">npm ci · vite build</div></div>
-            </div>
-            <div class="wf-stage" id="ci-s3">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:#1D9E75"></div></div>
-              <div class="stage-content"><div class="stage-title">Docker build check</div><div class="stage-sub">backend + frontend images</div></div>
-            </div>
-            <div class="live-runner" id="runner-ci">
-              <div class="runner-bar">
-                <span class="runner-title">ubuntu-latest · Actions runner</span>
-                <span class="runner-status" id="rs-ci" style="color:#1D9E75">● Passed</span>
-              </div>
-              <div class="runner-log" id="rl-ci"></div>
-            </div>
-          </div>
+    <!-- Architecture diagram -->
+    <div class="arch-wrap reveal" style="margin-top:32px;">
+      <div class="arch-header">
+        <div class="win-dot win-r"></div>
+        <div class="win-dot win-y"></div>
+        <div class="win-dot win-g"></div>
+        <div class="arch-title">crew_agents.py — pipeline orchestration</div>
+      </div>
+      <div class="arch-body">
+        <div class="arch-flow">
+          <div class="arch-node user">👤 User Query</div>
+          <div class="arch-arrow">──▶</div>
+          <div class="arch-node researcher">🔍 Researcher<br><span style="font-size:.65rem;opacity:.6">Tavily × 3+</span></div>
+          <div class="arch-arrow">──▶</div>
+          <div class="arch-node analyst">🧠 Analyst<br><span style="font-size:.65rem;opacity:.6">Gemini 2.0</span></div>
+          <div class="arch-arrow">──▶</div>
+          <div class="arch-node writer">✍️ Writer<br><span style="font-size:.65rem;opacity:.6">600+ words</span></div>
+          <div class="arch-arrow">──▶</div>
+          <div class="arch-node db">💾 ChromaDB<br><span style="font-size:.65rem;opacity:.6">+ .txt backup</span></div>
         </div>
-
-        <!-- CD Workflow -->
-        <div class="workflow-card" id="wf-cd" onclick="toggleWorkflow('cd')">
-          <div class="wf-header">
-            <span class="wf-icon">🚀</span>
-            <span class="wf-name">CD Workflow</span>
-            <span class="wf-badge badge-cd">merge to main</span>
-            <span class="wf-chevron" id="chev-cd">▾</span>
-          </div>
-          <div class="wf-body" id="body-cd">
-            <div class="wf-stage" id="cd-s1">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:#3b82f6"></div><div class="stage-line"></div></div>
-              <div class="stage-content"><div class="stage-title">Quality gate</div><div class="stage-sub">full test suite must pass</div></div>
-            </div>
-            <div class="wf-stage" id="cd-s2">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:#3b82f6"></div><div class="stage-line"></div></div>
-              <div class="stage-content"><div class="stage-title">Build & push to Docker Hub</div><div class="stage-sub">tags: :latest + :&lt;sha&gt;</div></div>
-            </div>
-            <div class="wf-stage" id="cd-s3">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:#3b82f6"></div><div class="stage-line"></div></div>
-              <div class="stage-content"><div class="stage-title">SSH deploy to EC2</div><div class="stage-sub">docker compose pull + up -d</div></div>
-            </div>
-            <div class="wf-stage" id="cd-s4">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:#3b82f6"></div></div>
-              <div class="stage-content"><div class="stage-title">Health check + log SHA</div><div class="stage-sub">/api/health · deployments.log</div></div>
-            </div>
-            <div class="live-runner" id="runner-cd">
-              <div class="runner-bar">
-                <span class="runner-title">ubuntu-latest · Actions runner</span>
-                <span class="runner-status" id="rs-cd" style="color:#3b82f6">● Running</span>
-              </div>
-              <div class="runner-log" id="rl-cd"></div>
-            </div>
-          </div>
+        <div class="arch-flow">
+          <div class="arch-node infra">🐳 Docker Compose</div>
+          <div class="arch-arrow">──▶</div>
+          <div class="arch-node infra">⚙️ GitHub Actions CI/CD</div>
+          <div class="arch-arrow">──▶</div>
+          <div class="arch-node infra">☁️ AWS EC2</div>
+          <div class="arch-arrow">──▶</div>
+          <div class="arch-node infra">🌐 nginx (prod)</div>
         </div>
-
-        <!-- Rollback Workflow -->
-        <div class="workflow-card" id="wf-rb" onclick="toggleWorkflow('rb')">
-          <div class="wf-header">
-            <span class="wf-icon">⏪</span>
-            <span class="wf-name">Rollback Workflow</span>
-            <span class="wf-badge badge-rb">manual trigger</span>
-            <span class="wf-chevron" id="chev-rb">▾</span>
-          </div>
-          <div class="wf-body" id="body-rb">
-            <div class="wf-stage" id="rb-s1">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:var(--amber)"></div><div class="stage-line"></div></div>
-              <div class="stage-content"><div class="stage-title">Read deployments.log</div><div class="stage-sub">use provided SHA or previous</div></div>
-            </div>
-            <div class="wf-stage" id="rb-s2">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:var(--amber)"></div><div class="stage-line"></div></div>
-              <div class="stage-content"><div class="stage-title">Pull pinned images</div><div class="stage-sub">backend:&lt;sha&gt; + frontend:&lt;sha&gt;</div></div>
-            </div>
-            <div class="wf-stage" id="rb-s3">
-              <div class="stage-indicator"><div class="stage-dot-cicd" style="background:var(--amber)"></div></div>
-              <div class="stage-content"><div class="stage-title">Deploy + verify health</div><div class="stage-sub">completes in under 60s</div></div>
-            </div>
-            <div class="live-runner" id="runner-rb">
-              <div class="runner-bar">
-                <span class="runner-title">ubuntu-latest · Actions runner</span>
-                <span class="runner-status" id="rs-rb" style="color:var(--amber)">● Standby</span>
-              </div>
-              <div class="runner-log" id="rl-rb"></div>
-            </div>
-          </div>
-        </div>
-
+        <div class="arch-label">All agent steps stream to the browser via FastAPI Server-Sent Events in real time</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- FEATURES -->
-<section class="features-section" id="features">
-  <div class="reveal" style="text-align:center;margin-bottom:0">
-    <div class="label-tag" style="display:inline-block">Features</div>
-    <h2 class="sec-title">Everything built in</h2>
-    <p class="sec-sub" style="margin:0 auto 0">Research, deployment, and operations — all automated.</p>
-  </div>
-  <div class="features-grid stagger">
-    <div class="feature-card"><div class="feat-icon">⚡</div><div class="feat-title">Live SSE Pipeline</div><div class="feat-desc">Agent progress streams to the browser in real time via Server-Sent Events — no polling required.</div></div>
-    <div class="feature-card"><div class="feat-icon">🧠</div><div class="feat-title">Gemini 2.0 Powered</div><div class="feat-desc">Google Gemini 2.0 Flash drives all three agents via LangChain + CrewAI. Professional reports in minutes.</div></div>
-    <div class="feature-card"><div class="feat-icon">🔍</div><div class="feat-title">Semantic Search</div><div class="feat-desc">ChromaDB stores every report as a vector embedding using all-MiniLM-L6-v2. Find conceptually related reports.</div></div>
-    <div class="feature-card"><div class="feat-icon">🚀</div><div class="feat-title">Automated CI/CD</div><div class="feat-desc">Three GitHub Actions workflows run tests, build Docker images, and deploy to EC2 on every merge to main.</div></div>
-    <div class="feature-card"><div class="feat-icon">⏪</div><div class="feat-title">Versioned Rollback</div><div class="feat-desc">Every deploy tagged with its git SHA. Roll back to any version in under 60 seconds from GitHub Actions.</div></div>
-    <div class="feature-card"><div class="feat-icon">💾</div><div class="feat-title">Dual Knowledge Store</div><div class="feat-desc">Every report saves to ChromaDB for semantic search and as a .txt file for human-readable backup.</div></div>
-  </div>
-</section>
+<!-- ══ LIVE DEMO TERMINAL ══════════════════════════════════════════════ -->
+<section class="section" id="demo">
+  <div class="container">
+    <div class="section-eyebrow reveal">Live Demo</div>
+    <div class="section-title reveal">Watch the pipeline run</div>
+    <p class="section-sub reveal">Enter a retail research question below and watch all three agents work — streamed line by line, just like the real application.</p>
 
-<!-- TECH STACK -->
-<section class="tech-section" id="stack">
-  <div class="reveal" style="text-align:center">
-    <div class="label-tag" style="display:inline-block">Tech Stack</div>
-    <h2 class="sec-title">Every tool chosen with purpose</h2>
-    <p class="sec-sub" style="margin:0 auto">AI, backend, frontend, and DevOps infrastructure — all working together.</p>
-  </div>
-
-  <div style="max-width:900px;margin:0 auto">
-    <div style="margin-top:2rem;margin-bottom:.75rem;font-size:.72rem;font-family:var(--mono);color:var(--teal);letter-spacing:.08em" class="reveal">AI &amp; AGENTS</div>
-    <div class="tech-grid stagger" style="justify-content:flex-start">
-      <div class="tech-pill"><span class="tech-dot" style="background:#3b82f6"></span>Google Gemini 2.0 Flash</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#00d4aa"></span>CrewAI</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#00d4aa"></span>LangChain</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#f59e0b"></span>Tavily Search API</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#f59e0b"></span>ChromaDB</div>
-    </div>
-
-    <div style="margin-top:1.5rem;margin-bottom:.75rem;font-size:.72rem;font-family:var(--mono);color:var(--teal);letter-spacing:.08em" class="reveal">BACKEND</div>
-    <div class="tech-grid stagger" style="justify-content:flex-start">
-      <div class="tech-pill"><span class="tech-dot" style="background:#3b82f6"></span>Python 3.11</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#3b82f6"></span>FastAPI</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#3b82f6"></span>Uvicorn</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#8899aa"></span>Server-Sent Events</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#8899aa"></span>Pydantic</div>
-    </div>
-
-    <div style="margin-top:1.5rem;margin-bottom:.75rem;font-size:.72rem;font-family:var(--mono);color:var(--teal);letter-spacing:.08em" class="reveal">FRONTEND</div>
-    <div class="tech-grid stagger" style="justify-content:flex-start">
-      <div class="tech-pill"><span class="tech-dot" style="background:#22c55e"></span>React 18</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#22c55e"></span>Vite</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#22c55e"></span>Tailwind CSS</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#8899aa"></span>react-markdown</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#8899aa"></span>Axios</div>
-    </div>
-
-    <div style="margin-top:1.5rem;margin-bottom:.75rem;font-size:.72rem;font-family:var(--mono);color:var(--teal);letter-spacing:.08em" class="reveal">DEVOPS &amp; INFRASTRUCTURE</div>
-    <div class="tech-grid stagger" style="justify-content:flex-start">
-      <div class="tech-pill"><span class="tech-dot" style="background:#ef4444"></span>GitHub Actions</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#ef4444"></span>Docker + Compose</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#ef4444"></span>Docker Hub</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#ef4444"></span>AWS EC2</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#ef4444"></span>Ubuntu 22.04</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#ef4444"></span>nginx</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#f59e0b"></span>pytest + httpx</div>
-      <div class="tech-pill"><span class="tech-dot" style="background:#f59e0b"></span>Ruff linting</div>
+    <div class="terminal-wrap reveal" style="margin-top:48px;">
+      <div class="terminal-header">
+        <div class="win-dot win-r"></div>
+        <div class="win-dot win-y"></div>
+        <div class="win-dot win-g"></div>
+        <div class="t-title">retailmind-agent — interactive demo</div>
+      </div>
+      <div class="terminal-input-bar">
+        <span class="t-prompt">$</span>
+        <input class="t-input" id="demoInput" value="Analyze AI-powered checkout in retail 2025" type="text" placeholder="Enter a retail research question..."/>
+        <button class="t-run" id="demoBtn" onclick="runPipeline()">▶ Run</button>
+      </div>
+      <div class="t-progress-bar"><div class="t-progress-fill" id="progressFill"></div></div>
+      <div class="terminal-output" id="demoOutput">
+        <span class="t-dim">// Ready. Enter a question and click Run to start the research pipeline.</span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
-<section class="cta-section reveal">
-  <div class="cta-glow"></div>
-  <h2>Ready to research?</h2>
-  <p>Start your first retail industry research session in seconds.</p>
-  <a href="/app" class="btn-primary" style="font-size:1.05rem;padding:16px 36px">
-    Launch RetailMind
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-  </a>
+<!-- ══ DEVOPS ══════════════════════════════════════════════════════════ -->
+<section class="section alt" id="devops">
+  <div class="container">
+    <div class="section-eyebrow reveal">DevOps & CI/CD</div>
+    <div class="section-title reveal">Production-grade deployment<br>on AWS EC2</div>
+    <p class="section-sub reveal">Three GitHub Actions workflows automate the entire lifecycle. A single <code style="color:#00b8d9;background:rgba(0,184,217,.1);padding:1px 6px;border-radius:4px;font-size:.88em">git push</code> triggers testing, building, and deploying — no manual steps.</p>
+
+    <div class="devops-layout">
+      <div class="devops-card reveal">
+        <div class="dc-header">
+          <div><div class="dc-title">🔀 CI Workflow</div><div class="dc-trigger">triggers: push, pull_request</div></div>
+          <span class="dc-badge badge-pass">● Passing</span>
+        </div>
+        <div class="dc-steps">
+          <div class="dc-step"><div class="dc-step-ico">🧪</div><div class="dc-step-text"><strong>Backend Tests</strong>pytest · ruff lint · 4 test modules (config, health, research, knowledge)</div></div>
+          <div class="dc-step"><div class="dc-step-ico">⚛️</div><div class="dc-step-text"><strong>Frontend Build Check</strong>Node 20 · npm ci · vite build · asset verification</div></div>
+          <div class="dc-step"><div class="dc-step-ico">🐳</div><div class="dc-step-text"><strong>Docker Build Check</strong>multi-stage backend + frontend images validated</div></div>
+        </div>
+      </div>
+
+      <div class="devops-card reveal">
+        <div class="dc-header">
+          <div><div class="dc-title">🚀 CD Workflow</div><div class="dc-trigger">triggers: push to main only</div></div>
+          <span class="dc-badge badge-run">● Active</span>
+        </div>
+        <div class="dc-steps">
+          <div class="dc-step"><div class="dc-step-ico">🛡️</div><div class="dc-step-text"><strong>Quality Gate</strong>full test suite must pass before any deployment begins</div></div>
+          <div class="dc-step"><div class="dc-step-ico">📦</div><div class="dc-step-text"><strong>Build & Push to Docker Hub</strong>tags: :latest + :&lt;git-sha&gt; for both services</div></div>
+          <div class="dc-step"><div class="dc-step-ico">☁️</div><div class="dc-step-text"><strong>SSH deploy to EC2</strong>docker compose pull + up -d + /api/health check</div></div>
+        </div>
+      </div>
+
+      <div class="devops-card reveal">
+        <div class="dc-header">
+          <div><div class="dc-title">⏪ Rollback Workflow</div><div class="dc-trigger">triggers: manual · GitHub Actions UI</div></div>
+          <span class="dc-badge badge-idle">● Standby</span>
+        </div>
+        <div class="dc-steps">
+          <div class="dc-step"><div class="dc-step-ico">📋</div><div class="dc-step-text"><strong>Read deployments.log on EC2</strong>use provided SHA or auto-select previous deployment</div></div>
+          <div class="dc-step"><div class="dc-step-ico">📥</div><div class="dc-step-text"><strong>Pull pinned images from Docker Hub</strong>backend:&lt;sha&gt; + frontend:&lt;sha&gt;</div></div>
+          <div class="dc-step"><div class="dc-step-ico">✅</div><div class="dc-step-text"><strong>Deploy + verify</strong>/api/health confirms · completes in under 60 seconds</div></div>
+        </div>
+        <div class="deploy-log">
+          <div class="deploy-log-title">~/deployments.log — EC2 live feed</div>
+          <div class="deploy-entry"><span class="de-sha">732601e...</span><span class="de-time">2026-05-05 11:28Z</span><span class="de-tag tag-latest">latest</span></div>
+          <div class="deploy-entry"><span class="de-sha">659c667...</span><span class="de-time">2026-05-05 11:13Z</span><span class="de-tag tag-rb">rollback</span></div>
+          <div class="deploy-entry"><span class="de-sha">a1b2c3d...</span><span class="de-time">2026-05-05 10:55Z</span></div>
+        </div>
+      </div>
+
+      <div class="devops-card reveal">
+        <div class="dc-header">
+          <div><div class="dc-title">🔒 Zero-Downtime Deploy</div><div class="dc-trigger">docker compose pull + up -d</div></div>
+          <span class="dc-badge badge-pass">● Active</span>
+        </div>
+        <div class="dc-steps">
+          <div class="dc-step"><div class="dc-step-ico">🔄</div><div class="dc-step-text"><strong>Rolling container replacement</strong>new image pulled while old container still serves traffic</div></div>
+          <div class="dc-step"><div class="dc-step-ico">❤️</div><div class="dc-step-text"><strong>Health-check driven</strong>/api/health confirms new container live before removing old</div></div>
+          <div class="dc-step"><div class="dc-step-ico">🔐</div><div class="dc-step-text"><strong>GitHub Secrets only</strong>GEMINI_API_KEY · TAVILY_API_KEY · EC2 SSH key — nothing in code</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- FOOTER -->
+<!-- ══ TECH SCROLL ════════════════════════════════════════════════════ -->
+<div class="tech-section">
+  <div class="tech-scroll-title">Powered by</div>
+  <div class="tech-scroll-track">
+    <div class="tech-scroll-inner" id="techScroll">
+      <!-- duplicated for seamless loop -->
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#00d4aa"></div>Google Gemini 2.0</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#a78bfa"></div>CrewAI</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#34d399"></div>LangChain</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#fbbf24"></div>FastAPI</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#f472b6"></div>ChromaDB</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#00b8d9"></div>Tavily Search</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#00d4aa"></div>React 18 + Vite</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#34d399"></div>Docker Compose</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#fbbf24"></div>GitHub Actions</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#f87171"></div>AWS EC2</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#a78bfa"></div>nginx</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#00b8d9"></div>all-MiniLM-L6-v2</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#60a5fa"></div>pytest + Ruff</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#34d399"></div>Pydantic</div>
+      <!-- duplicate for loop -->
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#60a5fa"></div>Google Gemini 2.0</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#a78bfa"></div>CrewAI</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#34d399"></div>LangChain</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#fbbf24"></div>FastAPI</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#f472b6"></div>ChromaDB</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#00b8d9"></div>Tavily Search</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#00d4aa"></div>React 18 + Vite</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#34d399"></div>Docker Compose</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#fbbf24"></div>GitHub Actions</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#f87171"></div>AWS EC2</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#a78bfa"></div>nginx</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#00b8d9"></div>all-MiniLM-L6-v2</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#60a5fa"></div>pytest + Ruff</div>
+      <div class="tech-chip"><div class="tech-chip-dot" style="background:#34d399"></div>Pydantic</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FEATURES ════════════════════════════════════════════════════════ -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-eyebrow reveal">Features</div>
+    <div class="section-title reveal">Everything built in</div>
+    <p class="section-sub reveal">Research, deployment, and operations — all automated. No manual steps required from code to production.</p>
+
+    <div class="feat-grid">
+      <div class="feat-card reveal">
+        <div class="feat-ico">⚡</div>
+        <h3>Live SSE Streaming</h3>
+        <p>Agent progress streams to the browser in real time via Server-Sent Events. Watch agents think — no polling, no refresh.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">🧠</div>
+        <h3>Gemini 2.0 Powered</h3>
+        <p>Google Gemini 2.0 Flash drives all three agents via LangChain + CrewAI. Professional reports under 2 minutes.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">🔍</div>
+        <h3>Semantic Search</h3>
+        <p>ChromaDB stores every report as a vector embedding (all-MiniLM-L6-v2). Find related reports by meaning, not just keywords.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">🚀</div>
+        <h3>Automated CI/CD</h3>
+        <p>Three GitHub Actions workflows. Tests, Docker builds, and EC2 deploy happen automatically on every merge to main.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">⏪</div>
+        <h3>Versioned Rollback</h3>
+        <p>Every deployment tagged by git SHA. Roll back to any previous version in under 60 seconds — directly from GitHub Actions.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">💾</div>
+        <h3>Dual Knowledge Store</h3>
+        <p>Reports saved to ChromaDB for vector search AND as a .txt backup. Zero data loss. Always searchable.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">❤️</div>
+        <h3>Health-Checked Deploys</h3>
+        <p>The /api/health endpoint confirms every new container is live before the old one is removed. True zero-downtime.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">🐳</div>
+        <h3>Fully Containerized</h3>
+        <p>Multi-stage Docker builds for backend and frontend. SHA-tagged images on Docker Hub. Runs anywhere.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-ico">🔐</div>
+        <h3>Secrets-Only Credentials</h3>
+        <p>All API keys and SSH credentials managed via GitHub Secrets. Nothing sensitive in source code or Docker images.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ INSTALL / SETUP ════════════════════════════════════════════════ -->
+<div class="install-section" id="install">
+  <div class="section-eyebrow reveal" style="text-align:center;">Quick Start</div>
+  <div class="section-title reveal" style="text-align:center;max-width:540px;margin:0 auto;">
+    Get RetailMind running locally in minutes
+  </div>
+  <div style="text-align:center;">
+    <div class="install-box">
+      <span class="install-label">git</span>
+      <span class="install-cmd">clone <span class="arg">RetailMind-Autonomous_Retail_Research_Agent</span></span>
+      <button class="install-copy" onclick="copyInstall()" title="Copy">📋</button>
+    </div>
+    <div class="install-meta">Then: <code style="color:#60a5fa">cp backend/.env.example backend/.env</code> · fill API keys · <code style="color:#4ade80">docker compose up --build</code></div>
+    <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a class="cta-sec" href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent#readme" target="_blank" style="font-size:.84rem;">📄 Full Setup Docs</a>
+      <a class="cta-sec" href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank" style="font-size:.84rem;">⭐ GitHub Repo</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEAM ════════════════════════════════════════════════════════════ -->
+<section class="section alt" id="team">
+  <div class="container">
+    <div class="section-eyebrow reveal">Team</div>
+    <div class="section-title reveal">Built by students,<br>shipped like engineers</div>
+    <p class="section-sub reveal">Medicaps University · Datagami Skill Based Course · Academic Year 2025–2026</p>
+
+    <div class="team-grid">
+      <div class="team-card reveal"><div class="team-av">AK</div><div class="team-name">Aniket Kushwah</div><div class="team-id">EN22CS301124</div></div>
+      <div class="team-card reveal"><div class="team-av">AP</div><div class="team-name">Arsh Patidar</div><div class="team-id">EN22CS301204</div></div>
+      <div class="team-card reveal"><div class="team-av">AM</div><div class="team-name">Amit Patidar</div><div class="team-id">EN22CS301114</div></div>
+      <div class="team-card reveal"><div class="team-av">AD</div><div class="team-name">Anurag Didolkar</div><div class="team-id">EN22CS301169</div></div>
+      <div class="team-card reveal"><div class="team-av">AR</div><div class="team-name">Anuj Singh Rathore</div><div class="team-id">EN22CS301166</div></div>
+      <div class="team-card reveal"><div class="team-av">AG</div><div class="team-name">Avani Gupta</div><div class="team-id">EN22CS301236</div></div>
+    </div>
+
+    <div style="margin-top:36px;">
+      <div style="font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:14px;">Faculty & Mentors</div>
+      <div class="faculty-row">
+        <div class="faculty-card reveal"><div class="faculty-av">AS</div><div><div class="faculty-name">Prof. Akshay Saxena</div><div class="faculty-role">Industry Mentor</div></div></div>
+        <div class="faculty-card reveal"><div class="faculty-av">HP</div><div><div class="faculty-name">Dr. Hemlata Patel</div><div class="faculty-role">Faculty Guide</div></div></div>
+        <div class="faculty-card reveal"><div class="faculty-av">AJ</div><div><div class="faculty-name">Prof. Ajeet Singh Rajput</div><div class="faculty-role">Faculty Guide</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FINAL CTA ══════════════════════════════════════════════════════ -->
+<section class="final-cta">
+  <div class="final-cta-bg"></div>
+  <div class="final-cta-inner">
+    <h2 class="reveal">One engine from<br>research to live deploy</h2>
+    <p class="reveal">Three autonomous agents. Full CI/CD pipeline. Semantic knowledge base. All in one open-source project.</p>
+    <div class="final-cta-btns reveal">
+      <a class="cta-main" href="/app">🚀 Launch App</a>
+      <a class="cta-sec" href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank">View Source →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ═════════════════════════════════════════════════════════ -->
 <footer>
-  <div style="display:flex;align-items:center;gap:10px">
-    <div class="logo-dot" style="width:26px;height:26px;font-size:12px">🛒</div>
-    <span class="footer-copy">RetailMind · CSE Final Year Project 2025–2026 · Medicaps University</span>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="logo"><div class="logo-ico">🛒</div>RetailMind</div>
+      <p class="footer-desc">Autonomous AI research agent for the retail industry. Three agents, full CI/CD, AWS EC2 deployment. Open source.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Solutions</h4>
+      <a href="#agents">Agent Pipeline</a>
+      <a href="#devops">CI/CD Automation</a>
+      <a href="#features">Knowledge Base</a>
+      <a href="#install">Quick Start</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#team">Team</a>
+      <a href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank">Open Source</a>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <a href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent#readme" target="_blank">Docs</a>
+      <a href="#devops">CI/CD Quality</a>
+      <a href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank">GitHub</a>
+    </div>
   </div>
-  <div class="footer-tags">
-    <span class="footer-tag">Generative AI</span>
-    <span class="footer-tag">Multi-Agent</span>
-    <span class="footer-tag">CrewAI</span>
-    <span class="footer-tag">FastAPI</span>
-    <span class="footer-tag">React</span>
-    <span class="footer-tag">Docker</span>
-    <span class="footer-tag">GitHub Actions</span>
-    <span class="footer-tag">AWS EC2</span>
-    <span class="footer-tag">ChromaDB</span>
+  <div class="footer-bottom">
+    <div>© 2026 RetailMind · Medicaps University · Datagami Skill Based Course</div>
+    <div class="footer-links">
+      <a href="https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent" target="_blank">GitHub</a>
+      <a href="#how">Docs</a>
+      <a href="#team">Team</a>
+    </div>
   </div>
 </footer>
 
+<!-- ══ SCRIPTS ════════════════════════════════════════════════════════ -->
 <script>
-/* ─── SCROLL REVEAL ─── */
-const revealObs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      revealObs.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.12 });
+/* ── SCROLL REVEAL ─────────────────────────────────── */
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+}, {threshold:0.1, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .stagger').forEach(el => revealObs.observe(el));
+/* ── TERMINAL DEMO ─────────────────────────────────── */
+const SCRIPT = query => [
+  [0,     't-dim',   '// Starting RetailMind research session...'],
+  [200,   't-blue',  `[session] Query: "${query}"`],
+  [600,   't-blue',  '[researcher] Dispatching Tavily queries...'],
+  [1000,  '',        `  → "${query} statistics 2025"`],
+  [1500,  '',        `  → "${query} market analysis"`],
+  [2000,  '',        `  → "${query} company adoption"`],
+  [2800,  't-cyan',  '[researcher] ✓ 12 sources collected · 4,200 tokens'],
+  [3400,  't-cyan',  '[researcher] Handing off to Analyst →'],
+  [3900,  't-dim',   '──────────────────────────────────────────'],
+  [4200,  't-amber', '[analyst] Processing with Gemini 2.0 Flash...'],
+  [4800,  '',        '  ✓ Insight 1: Market growth 34% YoY'],
+  [5300,  '',        '  ✓ Insight 2: $15.7B market size by 2027 (Gartner)'],
+  [5800,  '',        '  ✓ Insight 3: Amazon Go — 50+ cashierless stores'],
+  [6300,  '',        '  ✓ Insight 4: 99.7% inventory accuracy with CV'],
+  [6800,  '',        '  ✓ Insight 5: 67% retailers plan AI investment 2025'],
+  [7400,  't-cyan',  '[analyst] 5 insights extracted · Handing to Writer →'],
+  [7900,  't-dim',   '──────────────────────────────────────────'],
+  [8200,  't-amber', '[writer] Drafting report with Gemini 2.0 Flash...'],
+  [8700,  '',        '  📝 Executive Summary — done'],
+  [9200,  '',        '  📝 Market Analysis — done'],
+  [9700,  '',        '  📝 Key Technologies — done'],
+  [10200, '',        '  📝 Company Case Studies — done'],
+  [10700, '',        '  📝 Recommendations & Outlook — done'],
+  [11300, 't-cyan',  '[writer] Report complete — 652 words · Saving →'],
+  [11800, 't-dim',   '──────────────────────────────────────────'],
+  [12100, 't-green', '[chroma] Embedding with all-MiniLM-L6-v2...'],
+  [12800, 't-green', '[chroma] ✓ Vector stored in ChromaDB'],
+  [13400, 't-green', '[chroma] ✓ Plaintext backup saved to /knowledge_base'],
+  [14000, 't-green', `[session] ✅ Research complete · 652 words · 14.2s`],
+];
 
-/* ─── SMOOTH NAV ─── */
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    const t = document.querySelector(a.getAttribute('href'));
-    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+let running = false, timers = [];
+
+function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+
+function runPipeline(){
+  if(running) return;
+  const query = document.getElementById('demoInput').value.trim() || 'Analyze AI trends in retail 2025';
+  const out = document.getElementById('demoOutput');
+  const fill = document.getElementById('progressFill');
+  const btn = document.getElementById('demoBtn');
+
+  running = true; btn.disabled = true; btn.textContent = '⏳';
+  out.innerHTML = ''; fill.style.width = '0%';
+  clearTimers();
+
+  const script = SCRIPT(query);
+  const total = script[script.length - 1][0] + 1000;
+
+  script.forEach(([t, cls, text]) => {
+    const timer = setTimeout(() => {
+      const span = document.createElement('span');
+      span.className = `t-line ${cls}`;
+      span.textContent = text;
+      out.appendChild(span);
+      out.appendChild(document.createElement('br'));
+      out.scrollTop = out.scrollHeight;
+      // progress
+      const pct = Math.round((t / total) * 100);
+      fill.style.width = pct + '%';
+    }, t);
+    timers.push(timer);
   });
+
+  timers.push(setTimeout(() => {
+    fill.style.width = '100%';
+    running = false;
+    btn.disabled = false;
+    btn.textContent = '▶ Run Again';
+  }, total));
+}
+
+document.getElementById('demoInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') runPipeline();
 });
 
-/* ─── AGENT DEMO ANIMATION (loops) ─── */
-(function agentDemo() {
-  const demoLogs = [
-    { cls: 'rl-info', text: '[22:14:00]  Research Agent activated' },
-    { cls: 'rl-cmd',  text: '[22:14:01]  tavily.search("AI retail inventory 2025")' },
-    { cls: 'rl-ok',   text: '[22:14:04]  → 5 results returned' },
-    { cls: 'rl-cmd',  text: '[22:14:05]  tavily.search("retail AI trends statistics")' },
-    { cls: 'rl-ok',   text: '[22:14:08]  → 5 results returned' },
-    { cls: 'rl-ok',   text: '[22:14:09]  Researcher done — passing to Analyst' },
-    { cls: 'rl-info', text: '[22:14:10]  Analyst Agent activated' },
-    { cls: 'rl-ok',   text: '[22:14:14]  Extracted 6 key insights with citations' },
-    { cls: 'rl-ok',   text: '[22:14:15]  Analyst done — passing to Writer' },
-    { cls: 'rl-info', text: '[22:14:16]  Writer Agent activated' },
-    { cls: 'rl-cmd',  text: '[22:14:17]  Drafting report structure...' },
-    { cls: 'rl-ok',   text: '[22:14:45]  Report complete — 742 words written' },
-    { cls: 'rl-ok',   text: '[22:14:46]  Saved to ChromaDB vector store' },
-    { cls: 'rl-ok',   text: '[22:14:46]  Saved backup .txt file' },
-    { cls: 'rl-info', text: '[22:14:47]  ✅ Research complete in 47s' },
-  ];
-
-  const logEl = document.getElementById('demo-log');
-  const progEl = document.getElementById('demo-prog');
-  const spinnerEl = document.getElementById('demo-spinner');
-  const titleEl = document.getElementById('demo-title');
-
-  const states = [
-    // [researcher, analyst, writer, chroma, progress, logIdx, arrow1, arrow2, arrow3]
-    { researcher:'done', analyst:'done', writer:'active', chroma:'idle', prog:65 },
-    { researcher:'done', analyst:'done', writer:'active', chroma:'idle', prog:75 },
-    { researcher:'done', analyst:'done', writer:'active', chroma:'idle', prog:82 },
-    { researcher:'done', analyst:'done', writer:'done',   chroma:'active', prog:92 },
-    { researcher:'done', analyst:'done', writer:'done',   chroma:'done',  prog:100 },
-  ];
-
-  let logIdx = 0;
-  let stateIdx = 2; // start mid-run
-
-  function applyCircleState(id, state, label, labelEl) {
-    const el = document.getElementById('pc-'+id);
-    const lEl = document.getElementById('pl-'+id);
-    el.className = 'pipe-circle';
-    el.innerHTML = { researcher:'🔍', analyst:'🧠', writer:'✍️', chroma:'💾' }[id];
-    if (state === 'done') {
-      el.style.cssText = 'background:rgba(16,110,86,0.25);border:2px solid #1D9E75';
-      el.innerHTML += '<div class="check-badge" style="background:#0F6E56;border:2px solid #03050a"><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="#9FE1CB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg></div>';
-      lEl.style.color = '#1D9E75';
-    } else if (state === 'active') {
-      el.style.cssText = 'background:rgba(24,95,165,0.25);border:2px solid #3b82f6;position:relative';
-      el.innerHTML = { researcher:'🔍', analyst:'🧠', writer:'✍️', chroma:'💾' }[id] + '<div class="pulse-ring"></div>';
-      lEl.style.color = '#3b82f6';
-    } else {
-      el.style.cssText = 'background:rgba(255,255,255,0.04);border:2px solid rgba(255,255,255,0.12);opacity:0.4';
-      lEl.style.color = 'rgba(255,255,255,0.3)';
-    }
-  }
-
-  function runDemo() {
-    logEl.innerHTML = '';
-    logIdx = 0;
-    stateIdx = 0;
-    progEl.style.width = '20%';
-    titleEl.textContent = 'retail-research-agent — running';
-    spinnerEl.style.display = 'block';
-
-    ['researcher','analyst','writer','chroma'].forEach(id => applyCircleState(id,'idle'));
-    applyCircleState('researcher','active');
-    document.getElementById('arr-1').style.color = 'rgba(255,255,255,0.15)';
-    document.getElementById('arr-2').style.color = 'rgba(255,255,255,0.15)';
-    document.getElementById('arr-3').style.color = 'rgba(255,255,255,0.15)';
-
-    function addLog() {
-      if (logIdx >= demoLogs.length) return;
-      const l = demoLogs[logIdx];
-      const d = document.createElement('div');
-      d.className = 'log-line ' + l.cls;
-      d.style.animation = 'logIn 0.25s ease forwards';
-      d.textContent = l.text;
-      if (logIdx === demoLogs.length - 5) d.innerHTML += '<span class="cursor"></span>';
-      logEl.appendChild(d);
-      logEl.scrollTop = logEl.scrollHeight;
-      logIdx++;
-
-      // Update visual state based on log progress
-      if (logIdx === 3) { applyCircleState('researcher','active'); progEl.style.width='25%'; }
-      if (logIdx === 6) { applyCircleState('researcher','done'); document.getElementById('arr-1').style.color='#1D9E75'; applyCircleState('analyst','active'); progEl.style.width='45%'; }
-      if (logIdx === 8) { applyCircleState('analyst','done'); document.getElementById('arr-2').style.color='#1D9E75'; applyCircleState('writer','active'); progEl.style.width='65%'; }
-      if (logIdx === 11) { progEl.style.width='80%'; }
-      if (logIdx === 12) { applyCircleState('writer','done'); document.getElementById('arr-3').style.color='#1D9E75'; applyCircleState('chroma','active'); progEl.style.width='92%'; }
-      if (logIdx === 14) {
-        applyCircleState('chroma','done'); progEl.style.width='100%';
-        spinnerEl.style.display='none';
-        titleEl.textContent = 'retail-research-agent — completed ✓';
-        // Remove cursor
-        const c = logEl.querySelector('.cursor'); if(c) c.remove();
-        setTimeout(()=>{ runDemo(); }, 4000);
-        return;
-      }
-
-      const delay = (logIdx < 6) ? 900 : (logIdx < 9) ? 700 : (logIdx === 11) ? 1800 : 500;
-      setTimeout(addLog, delay);
-    }
-
-    setTimeout(addLog, 600);
-  }
-
-  runDemo();
-})();
-
-/* ─── WORKFLOW TOGGLE ─── */
-function toggleWorkflow(id) {
-  const body = document.getElementById('body-'+id);
-  const chev = document.getElementById('chev-'+id);
-  const card = document.getElementById('wf-'+id);
-  const isOpen = body.classList.contains('open');
-
-  // Close all
-  ['ci','cd','rb'].forEach(wid => {
-    document.getElementById('body-'+wid).classList.remove('open');
-    document.getElementById('chev-'+wid).style.transform = 'rotate(0deg)';
-    document.getElementById('wf-'+wid).classList.remove('active');
-  });
-
-  if (!isOpen) {
-    body.classList.add('open');
-    chev.style.transform = 'rotate(180deg)';
-    card.classList.add('active');
-    // Animate stages in
-    const stages = body.querySelectorAll('.wf-stage');
-    stages.forEach((s,i) => {
-      s.classList.remove('visible');
-      setTimeout(()=> s.classList.add('visible'), i * 90 + 60);
-    });
-    // Run runner animation
-    runRunner(id);
-  }
+/* ── COPY INSTALL ──────────────────────────────────── */
+function copyInstall(){
+  navigator.clipboard.writeText('git clone https://github.com/awwniket47/Retailmind-Autonomous_Retail_Research_Agent.git');
 }
 
-/* ─── RUNNER TERMINAL ANIMATIONS ─── */
-const runnerData = {
-  ci: [
-    { cls:'rl-cmd', text:'$ cd backend && pip install -r requirements.txt' },
-    { cls:'rl-ok',  text:'Successfully installed 28 packages' },
-    { cls:'rl-cmd', text:'$ ruff check . --select E,F,W --ignore E501' },
-    { cls:'rl-ok',  text:'All checks passed.' },
-    { cls:'rl-cmd', text:'$ python -m pytest tests/ -v --tb=short' },
-    { cls:'rl-ok',  text:'4 passed in 2.14s ✓' },
-    { cls:'rl-cmd', text:'$ cd frontend && npm ci && npm run build' },
-    { cls:'rl-ok',  text:'✓ built in 3.2s — dist/ ready' },
-    { cls:'rl-ok',  text:'✅ All checks passed' },
-  ],
-  cd: [
-    { cls:'rl-cmd', text:'$ docker build -t retailmind-backend:latest ./backend' },
-    { cls:'rl-ok',  text:'Step 8/8 : CMD ["uvicorn", "main:app"...]' },
-    { cls:'rl-ok',  text:'Successfully built 8f2a1c3d' },
-    { cls:'rl-cmd', text:'$ docker push johndoe/retailmind-backend:latest' },
-    { cls:'rl-ok',  text:'Pushed :latest + :732601e...' },
-    { cls:'rl-cmd', text:'$ ssh ubuntu@ec2-xx-xx-xx.compute.amazonaws.com' },
-    { cls:'rl-cmd', text:'$ docker compose pull && docker compose up -d' },
-    { cls:'rl-ok',  text:'Container retailmind-backend Started' },
-    { cls:'rl-cmd', text:'$ curl -sf http://localhost:8000/api/health' },
-    { cls:'rl-ok',  text:'{"status":"ok"} — ✅ Deploy successful!' },
-  ],
-  rb: [
-    { cls:'rl-cmd', text:'$ TARGET_SHA=659c667...' },
-    { cls:'rl-info', text:'Rolling back to: 659c667...' },
-    { cls:'rl-cmd', text:'$ docker pull johndoe/retailmind-backend:659c667...' },
-    { cls:'rl-ok',  text:'Pull complete — image verified' },
-    { cls:'rl-cmd', text:'$ ROLLBACK_SHA=659c667... docker compose up -d' },
-    { cls:'rl-ok',  text:'Container retailmind-backend Recreated' },
-    { cls:'rl-cmd', text:'$ curl -sf http://localhost:8000/api/health' },
-    { cls:'rl-ok',  text:'✅ Rollback to 659c667 successful!' },
-    { cls:'rl-ok',  text:'Recorded in deployments.log' },
-  ]
-};
-
-function runRunner(id) {
-  const logEl = document.getElementById('rl-'+id);
-  const statusEl = document.getElementById('rs-'+id);
-  if (!logEl) return;
-  logEl.innerHTML = '';
-
-  const lines = runnerData[id] || [];
-  const statusColors = { ci:'#1D9E75', cd:'#3b82f6', rb:'var(--amber)' };
-  const statusTexts = { ci:'● Running...', cd:'● Deploying...', rb:'● Rolling back...' };
-  const doneTexts   = { ci:'● Passed', cd:'● Deployed', rb:'● Reverted' };
-
-  statusEl.textContent = statusTexts[id];
-  statusEl.style.color = statusColors[id];
-
-  let i = 0;
-  function nextLine() {
-    if (i >= lines.length) {
-      statusEl.textContent = doneTexts[id];
-      return;
-    }
-    const d = document.createElement('div');
-    d.className = 'runner-line ' + lines[i].cls;
-    d.style.animation = 'logIn 0.2s ease forwards';
-    d.textContent = lines[i].text;
-    logEl.appendChild(d);
-    logEl.scrollTop = logEl.scrollHeight;
-    i++;
-    setTimeout(nextLine, lines[i-1].cls === 'rl-cmd' ? 380 : 240);
-  }
-  setTimeout(nextLine, 200);
-}
-
-/* ─── Open CI on first view of CICD section ─── */
-const cicdObs = new IntersectionObserver(entries => {
-  if (entries[0].isIntersecting) {
-    // Pre-animate CI stages
-    setTimeout(() => {
-      const stages = document.querySelectorAll('#body-ci .wf-stage');
-      stages.forEach((s, i) => setTimeout(() => s.classList.add('visible'), i * 100));
-      runRunner('ci');
-    }, 300);
-    cicdObs.disconnect();
-  }
-}, { threshold: 0.2 });
-cicdObs.observe(document.getElementById('cicd'));
+/* ── NAVBAR HIDE ON SCROLL ─────────────────────────── */
+let lastY = 0;
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const nav = document.querySelector('nav');
+  if(y > 80 && y > lastY) nav.style.transform = 'translateY(-100%)';
+  else nav.style.transform = 'translateY(0)';
+  nav.style.transition = 'transform .3s ease';
+  lastY = y;
+});
 </script>
 </body>
 </html>
